@@ -85,8 +85,22 @@ public class PythonOperation {
 
         System.out.println("image id: " + lastCreatedImage.getId());
 
-        String containerId = dockerClient.createContainerCmd(lastCreatedImage.getId()).exec().getId();
+        CreateContainerResponse container = dockerClient.createContainerCmd(lastCreatedImage.getId()).exec();
+        System.out.println("created container: " + container);
+        String containerId = container.getId();
         System.out.println("created container with id: " + containerId);
+
+        containers = dockerClient.listContainersCmd()
+                .withShowSize(true)
+                .withShowAll(true)
+                .exec();
+        System.out.println("list of docker containers: " + containers);
+
+        dockerClient.startContainerCmd(container.getId()).exec();
+        dockerClient.stopContainerCmd(container.getId()).exec();
+
+        dockerClient.startContainerCmd(container.getId()).exec();
+        dockerClient.killContainerCmd(container.getId()).exec();
     }
 }
 
