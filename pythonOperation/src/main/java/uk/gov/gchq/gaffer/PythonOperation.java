@@ -2,15 +2,13 @@ package uk.gov.gchq.gaffer;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.DockerCmdExecFactory;
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
-import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.github.dockerjava.core.command.BuildImageResultCallback;
 
+import java.io.File;
 import java.util.List;
 
 public class PythonOperation {
@@ -68,6 +66,22 @@ public class PythonOperation {
                 .exec();
         System.out.println("list of docker containers: " + containers);
 
+//        File directory = new File("./");
+//        System.out.println("directory is: " + directory.getAbsolutePath());
+//
+//        File directory2 = new File("pythonOperation/src/main/resources/Dockerfile");
+//        System.out.println("directory is: " + directory2.getAbsolutePath());
+
+        String imageId = dockerClient.buildImageCmd()
+                .withDockerfile(new File("pythonOperation/src/main/resources/Dockerfile"))
+                .withPull(true)
+                .withNoCache(true)
+                .withTag("alpine:git")
+                .exec(new BuildImageResultCallback())
+                .awaitImageId();
+        System.out.println("local dockerfile image is: " + imageId);
+
+
         Image lastCreatedImage = dockerClient.listImagesCmd().exec().get(0);
         System.out.println("image 0: " + lastCreatedImage);
 
@@ -97,10 +111,13 @@ public class PythonOperation {
         System.out.println("list of docker containers: " + containers);
 
         dockerClient.startContainerCmd(container.getId()).exec();
-        dockerClient.stopContainerCmd(container.getId()).exec();
+//        dockerClient.stopContainerCmd(container.getId()).exec();
 
-        dockerClient.startContainerCmd(container.getId()).exec();
-        dockerClient.killContainerCmd(container.getId()).exec();
+//        dockerClient.startContainerCmd(container.getId()).exec();
+//        dockerClient.killContainerCmd(container.getId()).exec();
+
+//        InspectContainerResponse containerInspectionResponse = dockerClient.inspectContainerCmd(container.getId()).exec();
+//        System.out.println("container inspection: " + containerInspectionResponse);
     }
 }
 
