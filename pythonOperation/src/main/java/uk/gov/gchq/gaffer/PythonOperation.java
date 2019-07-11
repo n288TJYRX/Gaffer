@@ -135,8 +135,6 @@ public class PythonOperation {
                 .exec();
         System.out.println("list of docker containers: " + containers);
 
-        dockerClient.startContainerCmd(container.getId()).exec();
-
         List<Network> networks = dockerClient.listNetworksCmd().exec();
         System.out.println("list of docker networks: " + networks);
 //        dockerClient.stopContainerCmd(container.getId()).exec();
