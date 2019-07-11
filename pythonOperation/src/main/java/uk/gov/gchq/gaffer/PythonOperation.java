@@ -2,6 +2,7 @@ package uk.gov.gchq.gaffer;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.CreateNetworkResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
@@ -81,7 +82,6 @@ public class PythonOperation {
                 .awaitImageId();
         System.out.println("local dockerfile image is: " + imageId);
 
-
         Image lastCreatedImage = dockerClient.listImagesCmd().exec().get(0);
         System.out.println("image 0: " + lastCreatedImage);
 
@@ -99,10 +99,35 @@ public class PythonOperation {
 
         System.out.println("image id: " + lastCreatedImage.getId());
 
-        CreateContainerResponse container = dockerClient.createContainerCmd(lastCreatedImage.getId()).exec();
+//        CreateContainerResponse container = dockerClient.createContainerCmd(lastCreatedImage.getId())
+//                .withExposedPorts(ExposedPort.parse("8080"), ExposedPort.parse("8081"))
+////              .withPortSpecs([8080,8081])
+//                .exec();
+
+
+
+
+
+        ExposedPort exposedInputPort = ExposedPort.tcp(8080);
+        ExposedPort exposedOutputPort = ExposedPort.tcp(8081);
+
+        Ports portBindings = new Ports();
+        portBindings.bind(exposedInputPort, Ports.Binding.bindPort(8082));
+        portBindings.bind(exposedOutputPort, Ports.Binding.bindPort(8083));
+
+        CreateContainerResponse container = dockerClient.createContainerCmd(lastCreatedImage.getId())
+                .withCmd("true")
+                .withExposedPorts(exposedInputPort, exposedOutputPort)
+                .withHostConfig(HostConfig.newHostConfig()
+                        .withPortBindings(portBindings))
+                .exec();
+
+        dockerClient.startContainerCmd(container.getId()).exec();
+
         System.out.println("created container: " + container);
         String containerId = container.getId();
         System.out.println("created container with id: " + containerId);
+
 
         containers = dockerClient.listContainersCmd()
                 .withShowSize(true)
@@ -111,6 +136,9 @@ public class PythonOperation {
         System.out.println("list of docker containers: " + containers);
 
         dockerClient.startContainerCmd(container.getId()).exec();
+
+        List<Network> networks = dockerClient.listNetworksCmd().exec();
+        System.out.println("list of docker networks: " + networks);
 //        dockerClient.stopContainerCmd(container.getId()).exec();
 
 //        dockerClient.startContainerCmd(container.getId()).exec();
@@ -118,6 +146,16 @@ public class PythonOperation {
 
 //        InspectContainerResponse containerInspectionResponse = dockerClient.inspectContainerCmd(container.getId()).exec();
 //        System.out.println("container inspection: " + containerInspectionResponse);
+
+//        CreateNetworkResponse networkResponse = dockerClient.createNetworkCmd()
+//                .withName("baeldung")
+//                .withDriver("bridge").exec();
+//        System.out.println("network response: " + networkResponse);
+//
+//        Network network = dockerClient.inspectNetworkCmd().withNetworkId("baeldung").exec();
+//        System.out.println("network: " + network);
+//
+//        dockerClient.removeNetworkCmd("baeldung").exec();
     }
 }
 
