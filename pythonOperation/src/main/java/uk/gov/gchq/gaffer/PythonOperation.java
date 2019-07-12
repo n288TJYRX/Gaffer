@@ -1,20 +1,36 @@
 package uk.gov.gchq.gaffer;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.CreateNetworkResponse;
-import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.model.*;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.HostConfig;
+import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.api.model.Info;
+import com.github.dockerjava.api.model.Network;
+import com.github.dockerjava.api.model.Ports;
+import com.github.dockerjava.api.model.SearchItem;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
+import org.apache.commons.lang3.exception.CloneFailedException;
+
+import uk.gov.gchq.gaffer.operation.Operation;
+import uk.gov.gchq.gaffer.operation.io.InputOutput;
+import uk.gov.gchq.gaffer.operation.serialisation.TypeReferenceImpl;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
-public class PythonOperation {
+public class PythonOperation<I_ITEM, O> implements
+        InputOutput<Iterable<? extends I_ITEM>, O>,
+        Operation {
 
     private final String operationName;
+    private Iterable<? extends I_ITEM> input;
+    private Map<String, String> options;
 //    private static final Logger LOGGER = LoggerFactory.getLogger(PythonOperation.class);
 
     public PythonOperation(final String name) {
@@ -105,9 +121,6 @@ public class PythonOperation {
 //                .exec();
 
 
-
-
-
         ExposedPort exposedInputPort = ExposedPort.tcp(8080);
         ExposedPort exposedOutputPort = ExposedPort.tcp(8081);
 
@@ -154,6 +167,36 @@ public class PythonOperation {
 //        System.out.println("network: " + network);
 //
 //        dockerClient.removeNetworkCmd("baeldung").exec();
+    }
+
+    @Override
+    public Iterable<? extends I_ITEM> getInput() {
+        return input;
+    }
+
+    @Override
+    public void setInput(final Iterable<? extends I_ITEM> input) {
+        this.input = input;
+    }
+
+    @Override
+    public TypeReference<O> getOutputTypeReference() {
+        return (TypeReference) new TypeReferenceImpl.Object();
+    }
+
+    @Override
+    public Operation shallowClone() throws CloneFailedException {
+        return null;
+    }
+
+    @Override
+    public Map<String, String> getOptions() {
+        return options;
+    }
+
+    @Override
+    public void setOptions(final Map<String, String> options) {
+        this.options = options;
     }
 }
 
