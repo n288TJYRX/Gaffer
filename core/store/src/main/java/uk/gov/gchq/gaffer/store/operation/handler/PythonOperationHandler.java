@@ -78,7 +78,7 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
     @Override
     public Object doOperation(final PythonOperation operation, final Context context, final Store store) throws OperationException {
 
-        final String scriptName = "script1";
+        final String scriptName = operation.getScriptName();
         final String scriptFilename = scriptName + ".py";
         final String entrypointFilename = "entrypoint.py";
         final String modulesFilename = scriptName + "Modules.txt";
@@ -86,6 +86,7 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
 
         // Pull or Clone the repo with the files
         System.out.println("Fetching the repo...");
+        System.out.println("Script name at handler is " + scriptName);
         File dir = new File(pathAbsolutePythonRepo);
         try {
             if (getGit() != null) {

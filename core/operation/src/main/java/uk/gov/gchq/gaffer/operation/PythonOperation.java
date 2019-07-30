@@ -34,6 +34,7 @@ public class PythonOperation<I_ITEM, O> implements
 
     private Iterable<? extends I_ITEM> input;
     private Map<String, String> options;
+    private String scriptName;
 
     @Override
     public Iterable<? extends I_ITEM> getInput() {
@@ -52,7 +53,7 @@ public class PythonOperation<I_ITEM, O> implements
 
     @Override
     public Operation shallowClone() throws CloneFailedException {
-        return new PythonOperation<>();
+        return new PythonOperation.Builder<>().name(scriptName).build();
     }
 
     @Override
@@ -65,4 +66,26 @@ public class PythonOperation<I_ITEM, O> implements
         this.options = options;
     }
 
+    public void setScriptName(String scriptName) {
+        System.out.println("scriptname at operation setter is " + scriptName);
+        this.scriptName = scriptName;
+    }
+
+    public String getScriptName() {
+        System.out.println("scriptname at operation getter is " + scriptName);
+        return scriptName;
+    }
+
+    public static class Builder<I_ITEM, O> extends BaseBuilder<PythonOperation<I_ITEM, O>, Builder<I_ITEM, O>>
+            implements InputOutput.Builder<PythonOperation<I_ITEM, O>, Iterable<? extends I_ITEM>, O, Builder<I_ITEM, O>>,
+            MultiInput.Builder<PythonOperation<I_ITEM, O>, I_ITEM, Builder<I_ITEM, O>> {
+        public Builder() {
+            super(new PythonOperation<>());
+        }
+
+        public Builder<I_ITEM, O> name(final String scriptName) {
+            _getOp().setScriptName(scriptName);
+            return _self();
+        }
+    }
 }

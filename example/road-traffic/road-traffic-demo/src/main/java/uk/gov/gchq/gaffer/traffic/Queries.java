@@ -73,11 +73,15 @@ public class Queries {
 
     private void runPython(final Graph graph, final User user) throws OperationException {
 
+        final String scriptName = "script1";
+
         final GetAllElements getAllElements =
                 new GetAllElements.Builder().build();
 
         final PythonOperation<Element, Void> pythonOperation =
                 new PythonOperation<>();
+
+        pythonOperation.setScriptName(scriptName);
 
         OperationChain<Void> opChain =
                 new OperationChain.Builder()
