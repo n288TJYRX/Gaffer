@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 
 import uk.gov.gchq.gaffer.commonutil.StreamUtil;
 import uk.gov.gchq.gaffer.data.element.Element;
+import uk.gov.gchq.gaffer.data.element.Entity;
 import uk.gov.gchq.gaffer.data.element.comparison.ElementPropertyComparator;
 import uk.gov.gchq.gaffer.data.element.function.ElementFilter;
 import uk.gov.gchq.gaffer.data.element.function.ElementTransformer;
@@ -34,6 +35,7 @@ import uk.gov.gchq.gaffer.operation.OperationException;
 import uk.gov.gchq.gaffer.operation.PythonOperation;
 import uk.gov.gchq.gaffer.operation.data.EntitySeed;
 import uk.gov.gchq.gaffer.operation.graph.SeededGraphFilters;
+import uk.gov.gchq.gaffer.operation.impl.Limit;
 import uk.gov.gchq.gaffer.operation.impl.add.AddElements;
 import uk.gov.gchq.gaffer.operation.impl.compare.Sort;
 import uk.gov.gchq.gaffer.operation.impl.generate.GenerateElements;
@@ -50,20 +52,28 @@ import uk.gov.gchq.koryphe.impl.predicate.range.InDateRangeDual;
 import uk.gov.gchq.koryphe.predicate.PredicateMap;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class runs simple java queries against the road traffic graph.
  */
 public class Queries {
-    public static void main(final String[] args) throws OperationException, IOException {
+    public static void main(final String[] args) throws OperationException, IOException, InterruptedException {
         new Queries().run();
     }
 
-    private void run() throws OperationException, IOException {
+    private void run() throws OperationException, IOException, InterruptedException {
         final User user = new User("user01");
         final Graph graph = createGraph(user);
 
+//        pythonPerformanceTest(graph, user);
         runPython(graph, user);
+//        parallelTest(graph, user);
         // Get the schema
         //System.out.println(graph.getSchema().toString());
 
@@ -71,19 +81,152 @@ public class Queries {
         //runFullExample(graph, user);
     }
 
+    private void parallelTest(final Graph graph, final User user) throws OperationException, InterruptedException {
+        //create a callable for each method
+        Callable<Void> callable = new Callable<Void>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                runPython(graph, user);
+                return null;
+            }
+
+        };
+
+        Callable<Void> callable2 = new Callable<Void>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                runPython2(graph, user);
+                return null;
+            }
+
+        };
+
+        List<Callable<Void>> taskList = new ArrayList<Callable<Void>>();
+        for (int i = 0; i < 5; i++) {
+            taskList.add(callable);
+        }
+        taskList.add(callable2);
+        for (int i = 0; i < 5; i++) {
+            taskList.add(callable);
+        }
+
+        //create a pool executor with 3 threads
+        ExecutorService executor = Executors.newFixedThreadPool(20);
+
+        try
+        {
+            //start the threads and wait for them to finish
+            executor.invokeAll(taskList);
+        }
+        catch (InterruptedException ie)
+        {
+            //do something if you care about interruption;
+        }
+
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+        }
+    }
+
+    private void pythonPerformanceTest(final Graph graph, final User user) throws OperationException, InterruptedException {
+
+        //create a callable for each method
+        Callable<Void> callable = new Callable<Void>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                runPython(graph, user);
+                return null;
+            }
+
+        };
+
+        List<Callable<Void>> taskList = new ArrayList<Callable<Void>>();
+        for (int i = 0; i < 10; i++) {
+            taskList.add(callable);
+        }
+
+        //create a pool executor with 3 threads
+        ExecutorService executor = Executors.newFixedThreadPool(20);
+
+        try
+        {
+            //start the threads and wait for them to finish
+            executor.invokeAll(taskList);
+        }
+        catch (InterruptedException ie)
+        {
+            //do something if you care about interruption;
+        }
+
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+        }
+    }
+
     private void runPython(final Graph graph, final User user) throws OperationException {
+
+        final String scriptName = "script1";
+        final List<Object> parameters = new ArrayList();
+        final String params = "a parameter";
+        parameters.add(params);
 
         final GetAllElements getAllElements =
                 new GetAllElements.Builder().build();
 
-        final PythonOperation<Element, Void> pythonOperation =
-                new PythonOperation<>();
+        final PythonOperation<Element, Entity> pythonOperation =
+                new PythonOperation.Builder<Element, Entity>()
+                        .name(scriptName)
+                        .parameters(parameters)
+                        .build();
 
-        OperationChain<Void> opChain =
+        OperationChain<Entity> opChain =
                 new OperationChain.Builder()
-                .first(getAllElements)
-                .then(pythonOperation)
-                .build();
+                        .first(getAllElements)
+                        //.then(new Limit.Builder<Element>().resultLimit(300).build())
+                        .then(pythonOperation)
+                        .build();
+
+        graph.execute(opChain, user);
+    }
+
+    private void runPython2(final Graph graph, final User user) throws OperationException {
+
+        final String scriptName = "script2";
+        final List<Object> parameters = new ArrayList();
+        final String params = "a parameter";
+        parameters.add(params);
+
+        final GetAllElements getAllElements =
+                new GetAllElements.Builder().build();
+
+        final PythonOperation<Element, Entity> pythonOperation =
+                new PythonOperation.Builder<Element, Entity>()
+                        .name(scriptName)
+                        .parameters(parameters)
+                        .build();
+
+        OperationChain<Entity> opChain =
+                new OperationChain.Builder()
+                        .first(getAllElements)
+                        .then(new Limit.Builder<Element>().resultLimit(5).build())
+                        .then(pythonOperation)
+                        .build();
 
         graph.execute(opChain, user);
     }
@@ -125,7 +268,7 @@ public class Queries {
                                                 .execute(new PredicateMap<>("BUS", new IsMoreThan(1000L)))
                                                 .build())
 
-                                                // Extract the bus count out of the frequency map and store in transient property "busCount"
+                                        // Extract the bus count out of the frequency map and store in transient property "busCount"
                                         .transientProperty("busCount", Long.class)
                                         .transformer(new ElementTransformer.Builder()
                                                 .select("countByVehicleType")
@@ -145,7 +288,7 @@ public class Queries {
                         .resultLimit(2)
                         .deduplicate(true)
                         .build())
-                        // Convert the result entities to a simple CSV in format: Junction,busCount.
+                // Convert the result entities to a simple CSV in format: Junction,busCount.
                 .then(new ToCsv.Builder()
                         .generator(new CsvGenerator.Builder()
                                 .vertex("Junction")

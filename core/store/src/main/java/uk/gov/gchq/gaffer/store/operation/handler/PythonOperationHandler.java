@@ -18,52 +18,61 @@ package uk.gov.gchq.gaffer.store.operation.handler;
 import com.google.common.collect.ImmutableMap;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.ProgressHandler;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.exceptions.DockerRequestException;
 import com.spotify.docker.client.messages.*;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.errors.RepositoryNotFoundException;
 
-import org.apache.commons.io.IOUtils;
+import uk.gov.gchq.gaffer.jsonserialisation.JSONSerialiser;
 import uk.gov.gchq.gaffer.operation.OperationException;
 import uk.gov.gchq.gaffer.operation.PythonOperation;
 import uk.gov.gchq.gaffer.store.Context;
 import uk.gov.gchq.gaffer.store.Store;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
+import java.net.URLEncoder;
 import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.errors.RepositoryNotFoundException;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class PythonOperationHandler implements OperationHandler<PythonOperation> {
 
-    private static Git git;
+    private Git git;
+    private final String repoName = "test";
+    private final String repoURI = "https://github.com/g609bmsma/test";
+    private final String pathAbsolutePythonRepo = FileSystems.getDefault().getPath(".").toAbsolutePath() + "/core/store/src/main/resources" + "/" + repoName;
 
-    private static Git getGit() {
+    /** Clone the git repo */
+    private Git getGit() {
+
         if (git == null) {
             try {
-                git = Git.open(new File(FileSystems.getDefault().getPath(".").toAbsolutePath() + "/core/store/src/main/resources/test"));
-            } catch (RepositoryNotFoundException e) {
+                git = Git.open(new File(pathAbsolutePythonRepo));
+            } catch (final RepositoryNotFoundException e) {
                 try {
-                    git = Git.cloneRepository()
-                            .setDirectory(new File(FileSystems.getDefault().getPath(".").toAbsolutePath() + "/core/store/src/main/resources/test"))
-                            .setURI("https://github.com/g609bmsma/test")
-                            .call();
-                    System.out.println("git cloned");
-                } catch (GitAPIException e1) {
+                    git = Git.cloneRepository().setDirectory(new File(pathAbsolutePythonRepo)).setURI(repoURI).call();
+                    System.out.println("Cloned the repo.");
+                } catch (final GitAPIException e1) {
                     e1.printStackTrace();
                     git = null;
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 e.printStackTrace();
                 git = null;
             }
@@ -73,208 +82,190 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
 
     @Override
     public Object doOperation(final PythonOperation operation, final Context context, final Store store) throws OperationException {
-        final Path hostAbsolutePathRoot = FileSystems.getDefault().getPath(".").toAbsolutePath();
-        final String hostAbsolutePathContainerResults = hostAbsolutePathRoot + "/core/store/src/main/resources";
-        final String containerResultsPath = "/hostBindMount";
-        final String relativeImagePath = "/core/store/src/main/resources";
-        String filename = "/testFileparameter.txt";
-        String operationName = "PythonOperation1";
 
-        File dir = new File(hostAbsolutePathContainerResults + "/test");
+        final String scriptName = operation.getScriptName();
+        final List parameters = operation.getParameters();
+        Object output = null;
 
+        // Pull or Clone the repo with the files
+        System.out.println("Fetching the repo...");
+        File dir = new File(pathAbsolutePythonRepo);
         try {
             if (getGit() != null) {
+                System.out.println("Repo already cloned, pulling files...");
                 getGit().pull().call();
-                System.out.println("git pulled");
+                System.out.println("Pulled the latest files.");
             } else {
-                Git.cloneRepository().setDirectory(dir).setURI("https://github.com/g609bmsma/test").call();
-                System.out.println("git cloned");
+                System.out.println("Repo has not been cloned, cloning the repo...");
+                Git.cloneRepository().setDirectory(dir).setURI(repoURI).call();
+                System.out.println("Cloned the repo.");
             }
-        } catch (GitAPIException e) {
-            e.printStackTrace();
-        }
-
-        File[] sources = new File[3];
-        File[] destinations = new File[3];
-
-        File source1 = new File(dir + "/entrypointPythonOperation1.py");
-        File dest1 = new File(hostAbsolutePathContainerResults + "/entrypointPythonOperation1.py");
-
-        sources[0] = source1;
-        destinations[0] = dest1;
-
-        File source2 = new File(dir + "/PythonOperation1.py");
-        File dest2 = new File(hostAbsolutePathContainerResults + "/PythonOperation1.py");
-
-        sources[1] = source2;
-        destinations[1] = dest2;
-
-        File source3 = new File(dir + "/pythonOperation1Modules.txt");
-        File dest3 = new File(hostAbsolutePathContainerResults + "/pythonOperation1Modules.txt");
-
-        sources[2] = source3;
-        destinations[2] = dest3;
-
-        for (int i = 0; i < sources.length; i++) {
-            try (FileInputStream fis = new FileInputStream(sources[i]);
-                 FileOutputStream fos = new FileOutputStream(destinations[i])) {
-
-                byte[] buffer = new byte[1024];
-                int length;
-
-                while ((length = fis.read(buffer)) > 0) {
-
-                    fos.write(buffer, 0, length);
-                }
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Load the pythonModules.txt file
-        String moduleData = "";
-        try {
-            FileInputStream fis = new FileInputStream(hostAbsolutePathContainerResults + "/pythonOperation1Modules.txt");
-            moduleData = IOUtils.toString(fis, "UTF-8");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        String[] modules = moduleData.split("\\n");
-
-        // Create Dockerfile data
-        String dockerFileData = "FROM python:3\n";
-        String addEntrypointFileLine = "ADD entrypoint" + operationName + ".py /\n";
-        String addScriptFileLine = "ADD " + operationName + ".py /\n";
-        dockerFileData = dockerFileData + addEntrypointFileLine + addScriptFileLine;
-
-        for (int i = 0; i < modules.length; i++) {
-            String module = modules[i];
-            String installLine = "RUN pip install " + module + "\n";
-            dockerFileData = dockerFileData + installLine;
-        }
-
-        String entrypointLine = "ENTRYPOINT [ \"python\", \"./" + "entrypoint" + operationName + ".py" + "\"]";
-        dockerFileData = dockerFileData + entrypointLine;
-
-        // Create a new Dockerfile from the pythonModules.txt
-        File file = new File(hostAbsolutePathContainerResults + "/Dockerfile" + operationName + ".yml");
-        try {
-            if(file.createNewFile()) {
-                // File created
-                System.out.println("Created a new file");
-                Files.write(Paths.get(hostAbsolutePathContainerResults + "/Dockerfile" + operationName + ".yml"), dockerFileData.getBytes());
-            } else {
-                // File already created
-                System.out.println("File already created");
-            }
-        } catch (IOException e) {
-            System.out.println("Failed to create Dockerfile");
+        } catch (final GitAPIException e) {
             e.printStackTrace();
         }
 
         try {
 
-            // Start the docker client
-            System.out.println("Starting the docker client...");
-            DockerClient docker = DefaultDockerClient.fromEnv().build();
+            // Connect to the Docker client. To ensure only one reference to the Docker client and to avoid
+            // memory leaks, synchronize this code amongst multiple threads.
+            System.out.println("Connecting to the Docker client...");
+
+            DockerClient docker;
+            synchronized(this){
+                docker = DefaultDockerClient.fromEnv().build();
+            }
+            System.out.println("Docker is now: " + docker);
 
             // Build an image from the Dockerfile
-            System.out.println("Building the image from Dockerfile...");
+            final String buildargs = "{\"scriptName\":\"" + scriptName + "\",\"parameters\":\"" + parameters + "\",\"modulesName\":\"" + scriptName + "Modules" + "\"}";
+            System.out.println(buildargs);
+            final DockerClient.BuildParam buildParam = DockerClient.BuildParam.create("buildargs", URLEncoder.encode(buildargs, "UTF-8"));
+
+            System.out.println("Building the image from the Dockerfile...");
             final AtomicReference<String> imageIdFromMessage = new AtomicReference<>();
-            final String returnedImageId = docker.build(Paths.get(hostAbsolutePathContainerResults),"myimage:latest", "Dockerfile" + operationName + ".yml", new ProgressHandler() {
-                @Override
-                public void progress(ProgressMessage message) {
-                    final String imageId = message.buildImageId();
-                    if (imageId != null) {
-                        imageIdFromMessage.set(imageId);
-                    }
-                    System.out.println(message);
-                }}, DockerClient.BuildParam.pullNewerImage());
+            final String returnedImageId = docker.build(Paths.get(pathAbsolutePythonRepo + "/../"), "pythonoperation:" + scriptName, "Dockerfile", message -> {
+                final String imageId = message.buildImageId();
+                if (imageId != null) {
+                    imageIdFromMessage.set(imageId);
+                }
+                System.out.println(message);
+            }, buildParam);
 
-            // Create a containers from the image id with a bind mount to the docker host
-            final ContainerConfig containerConfig = ContainerConfig.builder()
-                    .hostConfig( HostConfig.builder()
-                            .portBindings( ImmutableMap.of( "8080/tcp", Arrays.asList( PortBinding.of( "127.0.0.1", "8080" ) ) ) ).build() )
-                    .image(returnedImageId)
-                    .exposedPorts( "8080/tcp" )
-                    .cmd("sh", "-c", "while :; do sleep 1; done")
-                    .build();
-            final ContainerCreation creation = docker.createContainer(containerConfig);
-            final String id = creation.id();
+            // Remove the old images
+            final List<Image> images;
+            images = docker.listImages();
+            String repoTag = "[<none>:<none>]";
+            for (Image image : images) {
+                if (Objects.requireNonNull(image.repoTags()).toString().equals(repoTag)) {
+                    docker.removeImage(image.id());
+                }
+            }
 
-            // Start the container
-            System.out.println("Starting the docker container...");
-            docker.startContainer(id);
+            // Keep trying to start a container and find a free port.
+            String port = null;
+            boolean portAvailable = false;
+            String containerId = null;
+            for (int i = 0; i < 100; i++) {
+                try {
+                    port = getPort();
+
+                    // Create a container from the image and bind ports
+                    final ContainerConfig containerConfig = ContainerConfig.builder().hostConfig(HostConfig.builder().portBindings(ImmutableMap.of("80/tcp", Collections.singletonList(PortBinding.of("127.0.0.1", port)))).build()).image(returnedImageId).exposedPorts("80/tcp").cmd("sh", "-c", "while :; do sleep 1; done").build();
+                    final ContainerCreation creation = docker.createContainer(containerConfig);
+                    containerId = creation.id();
+
+                    // Start the container
+                    System.out.println("Starting the Docker container...");
+                    docker.startContainer(containerId);
+
+                    portAvailable = true;
+                    break;
+                } catch (DockerRequestException ignored) {
+                }
+            }
+            System.out.println("Port number is: "+ port);
+
+            if (!portAvailable) {
+                System.out.println("Failed to find an available port");
+            }
 
             // Keep trying to connect to container and give the container some time to load up
-            Boolean failedToConnect = true;
-            for (int i = 0; i < 10; i++) {
-                System.out.println("Attempting to send data...");
-                Socket clientSocket = null;
+            boolean failedToConnect = true;
+            IOException error = null;
+            Socket clientSocket = null;
+            DataInputStream in = null;
+            System.out.println("Attempting to send data to container...");
+            for (int i = 0; i < 100; i++) {
                 try {
-                    clientSocket = new Socket("127.0.0.1", 8080);
+                    clientSocket = new Socket("127.0.0.1", Integer.parseInt(port));
                     System.out.println("Connected to container port at " + clientSocket.getRemoteSocketAddress());
 
                     // Send the data
-                    System.out.println("Sending data from " + clientSocket.getLocalSocketAddress() + "...");
+                    System.out.println("Sending data to docker container from " + clientSocket.getLocalSocketAddress() + "...");
                     OutputStream outToContainer = clientSocket.getOutputStream();
                     DataOutputStream out = new DataOutputStream(outToContainer);
-                    out.writeUTF("Hello from client at " + clientSocket.getLocalSocketAddress());
-
+                    boolean firstObject = true;
+                    for (Object current : operation.getInput()) {
+                        if (firstObject) {
+                            out.writeUTF("[" + new String(JSONSerialiser.serialise(current)));
+                            firstObject = false;
+                        }
+                        else {
+                            out.writeUTF(", " + new String(JSONSerialiser.serialise(current)));
+                        }
+                    }
+                    out.writeUTF("]");
+                    out.flush();
+                    //out.writeUTF(dataToSend);
+                    System.out.println("Waiting for response from Container...");
                     // Get the data from the container
-                    System.out.println("Fetching data from container...");
                     InputStream inFromContainer = clientSocket.getInputStream();
-                    DataInputStream in = new DataInputStream(inFromContainer);
-                    System.out.println("Container says " + in.readUTF());
-                    failedToConnect = false;
-                    clientSocket.close();
-                    System.out.println("Closed the connection.");
+                    in = new DataInputStream(inFromContainer);
+                    System.out.println("Container ready status: " + in.readBoolean());
                     break;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    TimeUnit.MILLISECONDS.sleep(50);
+                } catch (final IOException e) {
+                    System.out.println("Failed to send data.");
+                    error = e;
+                    TimeUnit.MILLISECONDS.sleep(100);
                 }
             }
-
+            System.out.println("In is: " + in);
+            System.out.println("clientSocket is: " + clientSocket);
+            int incomingDataLength = 0;
+            if (clientSocket != null && in != null) {
+                int timeout = 0;
+                while (timeout < 100) {
+                    try {
+                        // Get the data from the container
+                        incomingDataLength = in.readInt();
+                        System.out.println("Length of container..." + incomingDataLength);
+                        failedToConnect = false;
+                        break;
+                    } catch (final IOException e) {
+                        timeout += 1;
+                        error = e;
+                        TimeUnit.MILLISECONDS.sleep(200);
+                    }
+                }
+            }
+            StringBuilder dataReceived = new StringBuilder();
             if (failedToConnect) {
                 System.out.println("Connection failed, stopping the container...");
-                docker.stopContainer(id,1); // Kill the container after 1 second
+                error.printStackTrace();
+                docker.stopContainer(containerId, 1); // Kill the container after 1 second
+            }
+            else {
+                for (int i = 0; i < incomingDataLength/65000; i++) {
+                   dataReceived.append(in.readUTF());
+                }
+                dataReceived.append(in.readUTF());
+                clientSocket.close();
             }
 
+            System.out.println("Closed the connection.");
+            System.out.println(dataReceived);
+
+            output = JSONSerialiser.deserialise(dataReceived.toString(),
+                    operation.getOutputClass());
+
             // Delete the container
-//            System.out.println("Deleting the container...");
-//            docker.removeContainer(id);
+            System.out.println("Deleting the container...");
+            docker.waitContainer(containerId);
+            docker.removeContainer(containerId);
 
-            // Close the docker client
-            System.out.println("Closing the docker client...");
             docker.close();
-            System.out.println("Closed the docker client.");
 
-        } catch (DockerCertificateException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (DockerException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (final DockerCertificateException | InterruptedException | DockerException | IOException e) {
             e.printStackTrace();
         }
-        return null;
+        return output;
     }
 
-
+    /** Get a random port number */
+    private String getPort() {
+        List<Integer> portsList = IntStream.rangeClosed(50000, 65535).boxed().collect(Collectors.toList());
+        Random rand = new Random();
+        Integer portNum = portsList.get(rand.nextInt(portsList.size()));
+        return String.valueOf(portNum);
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
