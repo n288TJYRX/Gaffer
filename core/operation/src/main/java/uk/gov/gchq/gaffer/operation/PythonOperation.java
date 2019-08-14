@@ -33,7 +33,7 @@ public class PythonOperation<I_ITEM, O> implements
     private Iterable<? extends I_ITEM> input;
     private Map<String, String> options;
     private String scriptName;
-    private List<Object> parameters;
+    private Map<String, Object> parameters;
 
     @Override
     public Iterable<? extends I_ITEM> getInput() {
@@ -73,11 +73,11 @@ public class PythonOperation<I_ITEM, O> implements
         return scriptName;
     }
 
-    public List<Object> getParameters() {
+    public Map<String, Object> getParameters() {
         return parameters;
     }
 
-    public void setParameters(final List<Object> parameters) {
+    public void setParameters(final Map<String, Object> parameters) {
         this.parameters = parameters;
     }
 
@@ -93,7 +93,7 @@ public class PythonOperation<I_ITEM, O> implements
             return _self();
         }
 
-        public Builder<I_ITEM, O> parameters(final List<Object> parameters) {
+        public Builder<I_ITEM, O> parameters(final Map<String, Object> parameters) {
             _getOp().setParameters(parameters);
             return _self();
         }

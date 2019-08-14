@@ -21,7 +21,11 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.exceptions.DockerRequestException;
-import com.spotify.docker.client.messages.*;
+import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.Image;
+import com.spotify.docker.client.messages.PortBinding;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
@@ -42,10 +46,7 @@ import java.net.Socket;
 import java.net.URLEncoder;
 import java.nio.file.FileSystems;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -84,7 +85,7 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
     public Object doOperation(final PythonOperation operation, final Context context, final Store store) throws OperationException {
 
         final String scriptName = operation.getScriptName();
-        final List parameters = operation.getParameters();
+        final Map parameters = operation.getParameters();
         Object output = null;
 
         // Pull or Clone the repo with the files
@@ -235,7 +236,7 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
                 docker.stopContainer(containerId, 1); // Kill the container after 1 second
             }
             else {
-                for (int i = 0; i < incomingDataLength/65000; i++) {
+                for (int i = 0; i < incomingDataLength / 65000; i++) {
                    dataReceived.append(in.readUTF());
                 }
                 dataReceived.append(in.readUTF());
