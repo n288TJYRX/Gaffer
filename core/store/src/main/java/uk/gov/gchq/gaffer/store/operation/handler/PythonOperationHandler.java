@@ -71,7 +71,6 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
                 try {
                     git = Git.cloneRepository().setDirectory(new File(pathAbsolutePythonRepo)).setURI(repoURI).call();
                     LOGGER.info("Cloned the repo.");
-                    System.out.println("Cloned the repo.");
                 } catch (final GitAPIException e1) {
                     e1.printStackTrace();
                     git = null;
@@ -92,21 +91,16 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
         Object output = null;
 
         // Pull or Clone the repo with the files
-        System.out.println("Fetching the repo...");
         LOGGER.info("Fetching the repo.");
         File dir = new File(pathAbsolutePythonRepo);
         try {
             if (getGit() != null) {
-                System.out.println("Repo already cloned, pulling files...");
                 LOGGER.info("Repo already cloned, pulling files...");
                 getGit().pull().call();
-                System.out.println("Pulled the latest files.");
                 LOGGER.info("Pulled the latest files.");
             } else {
-                System.out.println("Repo has not been cloned, cloning the repo...");
                 LOGGER.info("Repo has not been cloned, cloning the repo...");
                 Git.cloneRepository().setDirectory(dir).setURI(repoURI).call();
-                System.out.println("Cloned the repo.");
                 LOGGER.info("Cloned the repo");
             }
         } catch (final GitAPIException e) {
@@ -117,23 +111,19 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
 
             // Connect to the Docker client. To ensure only one reference to the Docker client and to avoid
             // memory leaks, synchronize this code amongst multiple threads.
-            System.out.println("Connecting to the Docker client...");
             LOGGER.info("Connecting to the Docker client...");
 
             DockerClient docker;
             synchronized(this){
                 docker = DefaultDockerClient.fromEnv().build();
             }
-            System.out.println("Docker is now: " + docker);
             LOGGER.info("Docker is now: {}", docker);
 
             // Build an image from the Dockerfile
             final String buildargs = "{\"scriptName\":\"" + scriptName + "\",\"parameters\":\"" + parameters + "\",\"modulesName\":\"" + scriptName + "Modules" + "\"}";
-            System.out.println(buildargs);
             LOGGER.info(buildargs);
             final DockerClient.BuildParam buildParam = DockerClient.BuildParam.create("buildargs", URLEncoder.encode(buildargs, "UTF-8"));
 
-            System.out.println("Building the image from the Dockerfile...");
             LOGGER.info("Building the image from the Dockerfile...");
             final AtomicReference<String> imageIdFromMessage = new AtomicReference<>();
             final String returnedImageId = docker.build(Paths.get(pathAbsolutePythonRepo + "/../"), "pythonoperation:" + scriptName, "Dockerfile", message -> {
@@ -141,7 +131,6 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
                 if (imageId != null) {
                     imageIdFromMessage.set(imageId);
                 }
-                System.out.println(message);
                 LOGGER.info(String.valueOf(message));
             }, buildParam);
 
@@ -169,7 +158,6 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
                     containerId = creation.id();
 
                     // Start the container
-                    System.out.println("Starting the Docker container...");
                     LOGGER.info("Starting the Docker container...");
                     docker.startContainer(containerId);
 
@@ -178,11 +166,9 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
                 } catch (DockerRequestException ignored) {
                 }
             }
-            System.out.println("Port number is: "+ port);
             LOGGER.info("Port number is: "+ port);
 
             if (!portAvailable) {
-                System.out.println("Failed to find an available port");
                 LOGGER.info("Failed to find an available port");
             }
 
@@ -191,16 +177,13 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
             IOException error = null;
             Socket clientSocket = null;
             DataInputStream in = null;
-            System.out.println("Attempting to send data to container...");
             LOGGER.info("Attempting to send data to container...");
             for (int i = 0; i < 100; i++) {
                 try {
                     clientSocket = new Socket("127.0.0.1", Integer.parseInt(port));
-                    System.out.println("Connected to container port at " + clientSocket.getRemoteSocketAddress());
                     LOGGER.info("Connected to container port at {}", clientSocket.getRemoteSocketAddress());
 
                     // Send the data
-                    System.out.println("Sending data to docker container from " + clientSocket.getLocalSocketAddress() + "...");
                     LOGGER.info("Sending data to docker container from {}", clientSocket.getLocalSocketAddress() + "...");
                     OutputStream outToContainer = clientSocket.getOutputStream();
                     DataOutputStream out = new DataOutputStream(outToContainer);
@@ -217,26 +200,21 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
                     out.writeUTF("]");
                     out.flush();
                     //out.writeUTF(dataToSend);
-                    System.out.println("Waiting for response from Container...");
                     LOGGER.info("Waiting for response from Container...");
 
                     // Get the data from the container
                     InputStream inFromContainer = clientSocket.getInputStream();
                     in = new DataInputStream(inFromContainer);
-                    System.out.println("Container ready status: " + in.readBoolean());
                     LOGGER.info("Container ready status: {}", in.readBoolean());
 
                     break;
                 } catch (final IOException e) {
-                    System.out.println("Failed to send data.");
                     LOGGER.info("Failed to send data.");
                     error = e;
                     TimeUnit.MILLISECONDS.sleep(100);
                 }
             }
-            System.out.println("In is: " + in);
             LOGGER.info("In is: {}", in);
-            System.out.println("clientSocket is: " + clientSocket);
             LOGGER.info("clientSocket is: {}", clientSocket);
             int incomingDataLength = 0;
             if (clientSocket != null && in != null) {
@@ -245,7 +223,6 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
                     try {
                         // Get the data from the container
                         incomingDataLength = in.readInt();
-                        System.out.println("Length of container..." + incomingDataLength);
                         LOGGER.info("Length of container...{}", incomingDataLength);
                         failedToConnect = false;
                         break;
@@ -258,7 +235,6 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
             }
             StringBuilder dataReceived = new StringBuilder();
             if (failedToConnect) {
-                System.out.println("Connection failed, stopping the container...");
                 LOGGER.info("Connection failed, stopping the container...");
                 error.printStackTrace();
                 docker.stopContainer(containerId, 1); // Kill the container after 1 second
@@ -271,16 +247,13 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
                 clientSocket.close();
             }
 
-            System.out.println("Closed the connection.");
             LOGGER.info("Closed the connection.");
-            System.out.println(dataReceived);
             LOGGER.info(String.valueOf(dataReceived));
 
             output = JSONSerialiser.deserialise(dataReceived.toString(),
                     operation.getOutputClass());
 
             // Delete the container
-            System.out.println("Deleting the container...");
             LOGGER.info("Deleting the container...");
             docker.waitContainer(containerId);
             docker.removeContainer(containerId);
