@@ -125,7 +125,7 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
                 docker = DefaultDockerClient.fromEnv().build();
             }
             System.out.println("Docker is now: " + docker);
-            LOGGER.info("Docker is now: " + docker);
+            LOGGER.info("Docker is now: {}", docker);
 
             // Build an image from the Dockerfile
             final String buildargs = "{\"scriptName\":\"" + scriptName + "\",\"parameters\":\"" + parameters + "\",\"modulesName\":\"" + scriptName + "Modules" + "\"}";
@@ -197,11 +197,11 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
                 try {
                     clientSocket = new Socket("127.0.0.1", Integer.parseInt(port));
                     System.out.println("Connected to container port at " + clientSocket.getRemoteSocketAddress());
-                    LOGGER.info("Connected to container port at " + clientSocket.getRemoteSocketAddress());
+                    LOGGER.info("Connected to container port at {}", clientSocket.getRemoteSocketAddress());
 
                     // Send the data
                     System.out.println("Sending data to docker container from " + clientSocket.getLocalSocketAddress() + "...");
-                    LOGGER.info("Sending data to docker container from " + clientSocket.getLocalSocketAddress() + "...");
+                    LOGGER.info("Sending data to docker container from {}", clientSocket.getLocalSocketAddress() + "...");
                     OutputStream outToContainer = clientSocket.getOutputStream();
                     DataOutputStream out = new DataOutputStream(outToContainer);
                     boolean firstObject = true;
@@ -224,7 +224,7 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
                     InputStream inFromContainer = clientSocket.getInputStream();
                     in = new DataInputStream(inFromContainer);
                     System.out.println("Container ready status: " + in.readBoolean());
-                    LOGGER.info("Container ready status: " + in.readBoolean());
+                    LOGGER.info("Container ready status: {}", in.readBoolean());
 
                     break;
                 } catch (final IOException e) {
@@ -235,9 +235,9 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
                 }
             }
             System.out.println("In is: " + in);
-            LOGGER.info("In is: " + in);
+            LOGGER.info("In is: {}", in);
             System.out.println("clientSocket is: " + clientSocket);
-            LOGGER.info("clientSocket is: " + clientSocket);
+            LOGGER.info("clientSocket is: {}", clientSocket);
             int incomingDataLength = 0;
             if (clientSocket != null && in != null) {
                 int timeout = 0;
@@ -246,7 +246,7 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
                         // Get the data from the container
                         incomingDataLength = in.readInt();
                         System.out.println("Length of container..." + incomingDataLength);
-                        LOGGER.info("Length of container..." + incomingDataLength);
+                        LOGGER.info("Length of container...{}", incomingDataLength);
                         failedToConnect = false;
                         break;
                     } catch (final IOException e) {
