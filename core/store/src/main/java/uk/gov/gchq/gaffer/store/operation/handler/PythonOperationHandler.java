@@ -26,6 +26,8 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.gov.gchq.gaffer.jsonserialisation.JSONSerialiser;
 import uk.gov.gchq.gaffer.operation.OperationException;
 import uk.gov.gchq.gaffer.operation.PythonOperation;
@@ -52,6 +54,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class PythonOperationHandler implements OperationHandler<PythonOperation> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PythonOperationHandler.class);
 
     private Git git;
     private final String repoName = "test";
@@ -86,6 +89,8 @@ public class PythonOperationHandler implements OperationHandler<PythonOperation>
         final String scriptName = operation.getScriptName();
         final List parameters = operation.getParameters();
         Object output = null;
+
+        LOGGER.info("Logger test");
 
         // Pull or Clone the repo with the files
         System.out.println("Fetching the repo...");
