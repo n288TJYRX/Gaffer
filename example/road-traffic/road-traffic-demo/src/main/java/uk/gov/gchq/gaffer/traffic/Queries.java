@@ -180,6 +180,7 @@ public class Queries {
         }};
         final String repoName = "test";
         final String repoURI = "https://github.com/g609bmsma/test";
+        final String ip = "127.0.0.1";
 
         final GetAllElements getAllElements =
                 new GetAllElements.Builder().build();
@@ -190,6 +191,7 @@ public class Queries {
                         .parameters(parameters)
                         .repoName(repoName)
                         .repoURI(repoURI)
+                        .ip(ip)
                         .build();
 
         OperationChain<Entity> opChain =
