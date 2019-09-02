@@ -19,7 +19,6 @@ import org.apache.commons.io.IOUtils;
 
 import uk.gov.gchq.gaffer.commonutil.StreamUtil;
 import uk.gov.gchq.gaffer.data.element.Element;
-import uk.gov.gchq.gaffer.data.element.Entity;
 import uk.gov.gchq.gaffer.data.element.comparison.ElementPropertyComparator;
 import uk.gov.gchq.gaffer.data.element.function.ElementFilter;
 import uk.gov.gchq.gaffer.data.element.function.ElementTransformer;
@@ -32,7 +31,6 @@ import uk.gov.gchq.gaffer.graph.Graph.Builder;
 import uk.gov.gchq.gaffer.graph.GraphConfig;
 import uk.gov.gchq.gaffer.operation.OperationChain;
 import uk.gov.gchq.gaffer.operation.OperationException;
-import uk.gov.gchq.gaffer.operation.PythonOperation;
 import uk.gov.gchq.gaffer.operation.data.EntitySeed;
 import uk.gov.gchq.gaffer.operation.graph.SeededGraphFilters;
 import uk.gov.gchq.gaffer.operation.impl.Limit;
@@ -44,6 +42,9 @@ import uk.gov.gchq.gaffer.operation.impl.get.GetAllElements;
 import uk.gov.gchq.gaffer.operation.impl.get.GetElements;
 import uk.gov.gchq.gaffer.operation.impl.output.ToCsv;
 import uk.gov.gchq.gaffer.operation.impl.output.ToSet;
+import uk.gov.gchq.gaffer.python.operation.RunPythonScript;
+import uk.gov.gchq.gaffer.python.operation.ScriptInputType;
+import uk.gov.gchq.gaffer.python.operation.ScriptOutputType;
 import uk.gov.gchq.gaffer.traffic.generator.RoadTrafficStringElementGenerator;
 import uk.gov.gchq.gaffer.types.function.FreqMapExtractor;
 import uk.gov.gchq.gaffer.user.User;
@@ -53,7 +54,9 @@ import uk.gov.gchq.koryphe.predicate.PredicateMap;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -73,6 +76,7 @@ public class Queries {
 
 //        pythonPerformanceTest(graph, user);
         runPython(graph, user);
+//        runPython2(graph, user);
 //        parallelTest(graph, user);
         // Get the schema
         //System.out.println(graph.getSchema().toString());
@@ -86,8 +90,7 @@ public class Queries {
         Callable<Void> callable = new Callable<Void>()
         {
             @Override
-            public Void call() throws Exception
-            {
+            public Void call() throws Exception {
                 runPython(graph, user);
                 return null;
             }
@@ -97,8 +100,7 @@ public class Queries {
         Callable<Void> callable2 = new Callable<Void>()
         {
             @Override
-            public Void call() throws Exception
-            {
+            public Void call() throws Exception {
                 runPython2(graph, user);
                 return null;
             }
@@ -117,13 +119,10 @@ public class Queries {
         //create a pool executor with 3 threads
         ExecutorService executor = Executors.newFixedThreadPool(20);
 
-        try
-        {
+        try {
             //start the threads and wait for them to finish
             executor.invokeAll(taskList);
-        }
-        catch (InterruptedException ie)
-        {
+        } catch (final InterruptedException ie) {
             //do something if you care about interruption;
         }
 
@@ -132,7 +131,7 @@ public class Queries {
             if (!executor.awaitTermination(100, TimeUnit.MILLISECONDS)) {
                 executor.shutdownNow();
             }
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             executor.shutdownNow();
         }
     }
@@ -143,8 +142,7 @@ public class Queries {
         Callable<Void> callable = new Callable<Void>()
         {
             @Override
-            public Void call() throws Exception
-            {
+            public Void call() throws Exception {
                 runPython(graph, user);
                 return null;
             }
@@ -159,13 +157,10 @@ public class Queries {
         //create a pool executor with 3 threads
         ExecutorService executor = Executors.newFixedThreadPool(20);
 
-        try
-        {
+        try {
             //start the threads and wait for them to finish
             executor.invokeAll(taskList);
-        }
-        catch (InterruptedException ie)
-        {
+        } catch (final InterruptedException ie) {
             //do something if you care about interruption;
         }
 
@@ -174,7 +169,7 @@ public class Queries {
             if (!executor.awaitTermination(100, TimeUnit.MILLISECONDS)) {
                 executor.shutdownNow();
             }
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             executor.shutdownNow();
         }
     }
@@ -182,53 +177,76 @@ public class Queries {
     private void runPython(final Graph graph, final User user) throws OperationException {
 
         final String scriptName = "script1";
-        final List<Object> parameters = new ArrayList();
-        final String params = "a parameter";
-        parameters.add(params);
+        final Map<String, Object> scriptParameters = new HashMap<String, Object>() {{
+            put("a", "b");
+        }};
+        final String repoName = "test";
+        final String repoURI = "https://github.com/g609bmsma/test";
+        final String ip = "127.0.0.1";
+        final ScriptOutputType scriptOutputType = ScriptOutputType.ELEMENTS;
+        final ScriptInputType scriptInputType = ScriptInputType.DATAFRAME;
 
         final GetAllElements getAllElements =
                 new GetAllElements.Builder().build();
 
-        final PythonOperation<Element, Entity> pythonOperation =
-                new PythonOperation.Builder<Element, Entity>()
-                        .name(scriptName)
-                        .parameters(parameters)
+        final RunPythonScript<Element, Iterable<? extends String>> runPythonScript =
+                new RunPythonScript.Builder<Element, Iterable<? extends String>>()
+                        .scriptName(scriptName)
+                        //.scriptParameters(scriptParameters)
+                        .repoName(repoName)
+                        .repoURI(repoURI)
+                        .ip(ip)
+                        .scriptOutputType(scriptOutputType)
+                        .scriptInputType(scriptInputType)
                         .build();
 
-        OperationChain<Entity> opChain =
+        OperationChain<Iterable<? extends String>> opChain =
                 new OperationChain.Builder()
                         .first(getAllElements)
-                        //.then(new Limit.Builder<Element>().resultLimit(300).build())
-                        .then(pythonOperation)
+                        .then(new Limit.Builder<Element>().resultLimit(2).truncate(true).build())
+                        .then(runPythonScript)
                         .build();
 
-        graph.execute(opChain, user);
+        final Iterable<? extends String> results = graph.execute(opChain, user);
+
+        System.out.println("results are: " + results);
+
     }
 
     private void runPython2(final Graph graph, final User user) throws OperationException {
 
-        final String scriptName = "script2";
-        final List<Object> parameters = new ArrayList();
-        final String params = "a parameter";
-        parameters.add(params);
+        final String scriptName = "script1";
+        final Map<String, Object> scriptParameters = new HashMap<String, Object>() {{
+            put("a", "b");
+        }};
+        final String repoName = "test";
+        final String repoURI = "https://github.com/g609bmsma/test";
+        final ScriptOutputType scriptOutputType = ScriptOutputType.ELEMENTS;
+        final ScriptInputType scriptInputType = ScriptInputType.DATAFRAME;
 
         final GetAllElements getAllElements =
                 new GetAllElements.Builder().build();
 
-        final PythonOperation<Element, Entity> pythonOperation =
-                new PythonOperation.Builder<Element, Entity>()
-                        .name(scriptName)
-                        .parameters(parameters)
+        final RunPythonScript<Element, Iterable<? extends String>> runPythonScript =
+                new RunPythonScript.Builder<Element, Iterable<? extends String>>()
+                        .scriptName(scriptName)
+                        .scriptParameters(scriptParameters)
+                        .repoName(repoName)
+                        .repoURI(repoURI)
+                        .scriptOutputType(scriptOutputType)
+                        .scriptInputType(scriptInputType)
                         .build();
 
-        OperationChain<Entity> opChain =
+        OperationChain<Iterable<? extends String>> opChain =
                 new OperationChain.Builder()
                         .first(getAllElements)
-                        .then(new Limit.Builder<Element>().resultLimit(5).build())
-                        .then(pythonOperation)
+                        .then(new Limit.Builder<Element>().resultLimit(100).build())
+                        .then(runPythonScript)
                         .build();
 
-        graph.execute(opChain, user);
+        final Iterable<? extends String> results = graph.execute(opChain, user);
+
+        System.out.println("results are: " + results);
     }
 
     private void runFullExample(final Graph graph, final User user) throws OperationException {
