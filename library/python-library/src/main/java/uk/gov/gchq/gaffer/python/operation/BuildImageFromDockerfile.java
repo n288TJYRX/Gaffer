@@ -43,11 +43,15 @@ public class BuildImageFromDockerfile {
         String params = " ";
         if (scriptParameters != null) {
             Map<String, String> map = new HashMap<>();
+            LOGGER.info(scriptParameters.keySet().toArray()[0].toString());
             for (String current: scriptParameters.keySet()) {
-                map.put(current, scriptParameters.get(current).toString());
+                if (scriptParameters.get(current) != null) {
+                    map.put(current, scriptParameters.get(current).toString());
+                }
             }
             params = new Gson().toJson(map).replaceAll("\"", "'");
         }
+        LOGGER.info("params = " + params);
         final String buildargs =
                 "{\"scriptName\":\"" + scriptName + "\",\"scriptParameters\":\"" + params + "\"," +
                         "\"modulesName\":\"" + scriptName + "Modules" + "\",\"scriptInputType\":\"" + scriptInputType.toString() + "\"}";
