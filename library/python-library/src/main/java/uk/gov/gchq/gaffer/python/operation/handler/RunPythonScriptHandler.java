@@ -43,9 +43,11 @@ import uk.gov.gchq.gaffer.python.operation.PullOrCloneRepo;
 import uk.gov.gchq.gaffer.python.operation.RunPythonScript;
 import uk.gov.gchq.gaffer.python.operation.ScriptInputType;
 import uk.gov.gchq.gaffer.python.operation.ScriptOutputType;
-import uk.gov.gchq.gaffer.python.operation.SetUpAndCloseContainer;
+import uk.gov.gchq.gaffer.python.operation.SendAndGetDataFromContainer;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -59,7 +61,7 @@ import java.util.stream.Stream;
 public class RunPythonScriptHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RunPythonScriptHandler.class);
-    private final SetUpAndCloseContainer setUpAndCloseContainer = new SetUpAndCloseContainer();
+    private final SendAndGetDataFromContainer sendAndGetDataFromContainer = new SendAndGetDataFromContainer();
     private final PullOrCloneRepo pullOrCloneRepo = new PullOrCloneRepo();
     private final BuildImageFromDockerfile buildImageFromDockerfile = new BuildImageFromDockerfile();
     private final GetPort getPort = new GetPort();
@@ -70,15 +72,24 @@ public class RunPythonScriptHandler {
     public Object doOperation(final RunPythonScript operation) throws OperationException {
 
         final String repoName = operation.getRepoName();
-        final Path pathAbsolutePythonRepo = Paths.get(System.getProperty("user.home"), "Documents", "/Gaffer/NG/Gaffer", "/library/python-library/src/main/resources/", repoName);
+        final String currentWorkingDirectory = FileSystems.getDefault().getPath(".").toAbsolutePath().toString();
+        final String directoryPath = currentWorkingDirectory.concat("PythonBin");
+        final File directory = new File(directoryPath);
+        if (!directory.exists()) {
+            directory.mkdir();
+        }
+        final Path pathAbsolutePythonRepo = Paths.get(directoryPath, repoName);
         Object output = null;
         final String scriptName = operation.getScriptName();
         final Map<String, Object> scriptParameters = operation.getScriptParameters();
         final ScriptOutputType scriptOutputType = operation.getScriptOutputType();
         final ScriptInputType scriptInputType = operation.getScriptInputType();
 
+
+
         // Pull or Clone the repo with the files
         pullOrCloneRepo.pullOrClone(git, pathAbsolutePythonRepo.toString(), operation);
+        buildImageFromDockerfile.buildFiles(pathAbsolutePythonRepo.toString());
 
         try {
 
@@ -129,7 +140,7 @@ public class RunPythonScriptHandler {
             if (!portAvailable) {
                 LOGGER.info("Failed to find an available port");
             }
-            StringBuilder dataReceived = setUpAndCloseContainer.setUpAndCloseContainer(operation, port);
+            StringBuilder dataReceived = sendAndGetDataFromContainer.setUpAndCloseContainer(operation, port);
 
             switch (scriptOutputType) {
                 case ELEMENTS:
