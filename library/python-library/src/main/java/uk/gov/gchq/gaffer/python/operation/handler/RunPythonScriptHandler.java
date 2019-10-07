@@ -71,136 +71,19 @@ public class RunPythonScriptHandler {
 
     public Object doOperation(final RunPythonScript operation) throws OperationException {
 
-        final String repoName = operation.getRepoName();
-        final String currentWorkingDirectory = FileSystems.getDefault().getPath(".").toAbsolutePath().toString();
-        final String directoryPath = currentWorkingDirectory.concat("PythonBin");
-        final File directory = new File(directoryPath);
-        if (!directory.exists()) {
-            directory.mkdir();
-        }
-        final Path pathAbsolutePythonRepo = Paths.get(directoryPath, repoName);
-        Object output = null;
         final String scriptName = operation.getScriptName();
         final Map<String, Object> scriptParameters = operation.getScriptParameters();
-        final ScriptOutputType scriptOutputType = operation.getScriptOutputType();
-        final ScriptInputType scriptInputType = operation.getScriptInputType();
+        final String port = "32005";
 
-
-
-        // Pull or Clone the repo with the files
-        pullOrCloneRepo.pullOrClone(git, pathAbsolutePythonRepo.toString(), operation);
-        buildImageFromDockerfile.buildFiles(pathAbsolutePythonRepo.toString());
-
+        StringBuilder dataReceived = null;
         try {
-
-            // Connect to the Docker client. To ensure only one reference to the Docker client and to avoid
-            // memory leaks, synchronize this code amongst multiple threads.
-            LOGGER.info("Connecting to the Docker client...");
-
-            synchronized (this) {
-                docker = DefaultDockerClient.fromEnv().build();
-            }
-            LOGGER.info("Docker is now: {}", docker);
-            final String returnedImageId = buildImageFromDockerfile.buildImage(scriptName, scriptParameters, scriptInputType, docker, pathAbsolutePythonRepo.toString());
-
-            // Remove the old images
-            final List<Image> images;
-            images = docker.listImages();
-            String repoTag = "[<none>:<none>]";
-            for (final Image image : images) {
-                if (Objects.requireNonNull(image.repoTags()).toString().equals(repoTag)) {
-                    docker.removeImage(image.id());
-                }
-            }
-
-            // Keep trying to start a container and find a free port.
-            String port = null;
-            boolean portAvailable = false;
-            String ip = operation.getIp();
-            for (int i = 0; i < 100; i++) {
-                try {
-                    port = getPort.getPort();
-
-                    // Create a container from the image and bind ports
-                    final ContainerConfig containerConfig = ContainerConfig.builder().hostConfig(HostConfig.builder().portBindings(ImmutableMap.of("80/tcp", Collections.singletonList(PortBinding.of(ip, port)))).build()).image(returnedImageId).exposedPorts("80/tcp").cmd("sh", "-c", "while :; do sleep 1; done").build();
-                    final ContainerCreation creation = docker.createContainer(containerConfig);
-                    containerId = creation.id();
-
-                    // Start the container
-                    LOGGER.info("Starting the Docker container...");
-                    docker.startContainer(containerId);
-
-                    portAvailable = true;
-                    break;
-                } catch (final DockerRequestException ignored) {
-                }
-            }
-            LOGGER.info("Port number is: " + port);
-
-            if (!portAvailable) {
-                LOGGER.info("Failed to find an available port");
-            }
-            StringBuilder dataReceived = sendAndGetDataFromContainer.setUpAndCloseContainer(operation, port);
-
-            switch (scriptOutputType) {
-                case ELEMENTS:
-                    // Deserialise the data recieved into an ArrayList of LinkedHashMaps, to iterate over it
-                    Object deserialisedData = JSONSerialiser.deserialise(dataReceived.toString(), Object.class);
-                    if (deserialisedData instanceof ArrayList) {
-                        ArrayList<Object> arrayOutput = (ArrayList<Object>) deserialisedData;
-                        Stream<Element> elementStream = Stream.of();
-
-                        // Convert each LinkedHashMap element into its proper class
-                        for (final Object element : arrayOutput) {
-                            if (element instanceof LinkedHashMap) {
-
-                                // Convert the LinkedHashMap to Json and then deserialise it as an Element
-                                String jsonElement = new Gson().toJson(element, LinkedHashMap.class);
-                                Element deserializedElement = JSONSerialiser.deserialise(jsonElement, Element.class);
-
-                                // Create a stream of the deserialised elements
-                                elementStream = Stream.concat(Stream.of(deserializedElement), elementStream);
-                            }
-                        }
-                        // Convert the stream to a CloseableIterable
-                        output = new ElementsIterable(elementStream);
-                    }
-                    break;
-                case JSON:
-                    output = dataReceived;
-                    break;
-                default:
-                    output = null;
-            }
-
-            LOGGER.info("Closed the connection.");
-
-        } catch (final DockerCertificateException | InterruptedException | DockerException | IOException e) {
+            dataReceived = sendAndGetDataFromContainer.setUpAndCloseContainer(operation, port);
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
-        } finally {
-            LOGGER.info("Deleting the container...");
-            try {
-                docker.waitContainer(containerId);
-                docker.removeContainer(containerId);
-            } catch (final DockerException | InterruptedException e) {
-                e.printStackTrace();
-            }
-            docker.close();
-        }
-        return output;
-    }
-
-    private static class ElementsIterable extends WrappedCloseableIterable<Element> {
-
-        private final Stream elementsStream;
-
-        ElementsIterable(final Stream elementsStream) {
-            this.elementsStream = elementsStream;
         }
 
-        @Override
-        public CloseableIterator<Element> iterator() {
-            return new WrappedCloseableIterator<>(elementsStream.iterator());
-        }
+        LOGGER.info("Closed the connection.");
+        LOGGER.info("Data recieved is: " + dataReceived.toString());
+        return dataReceived;
     }
 }

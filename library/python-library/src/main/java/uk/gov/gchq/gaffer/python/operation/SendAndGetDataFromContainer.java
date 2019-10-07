@@ -47,7 +47,7 @@ public class SendAndGetDataFromContainer {
         LOGGER.info("Attempting to connect with the container...");
         for (int i = 0; i < 100; i++) {
             try {
-                clientSocket = new Socket("127.0.0.1", Integer.parseInt(port));
+                clientSocket = new Socket("192.168.99.107", Integer.parseInt(port));
                 LOGGER.info("Connected to container port at {}", clientSocket.getRemoteSocketAddress());
                 in = WriteDataToContainer.getInputStream(clientSocket);
                 LOGGER.info("Container ready status: {}", in.readBoolean());
