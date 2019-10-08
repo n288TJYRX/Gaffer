@@ -59,4 +59,13 @@ final class WriteDataToContainer {
     static DataInputStream getInputStream(final Socket clientSocket) throws IOException {
         return new DataInputStream(clientSocket.getInputStream());
     }
+
+    static void reroute(final String path, final Socket clientSocket) throws IOException {
+        String header = "POST /" + path + " HTTP/1.1\r\n" + "Host:pythonserverproject.192.168.99.107.nip.io\r\n\r\n";
+        OutputStream outToContainer = clientSocket.getOutputStream();
+        DataOutputStream out = new DataOutputStream(outToContainer);
+        byte[] byteHeader = header.getBytes();
+        out.write(byteHeader,0,byteHeader.length);
+        out.flush();
+    }
 }
