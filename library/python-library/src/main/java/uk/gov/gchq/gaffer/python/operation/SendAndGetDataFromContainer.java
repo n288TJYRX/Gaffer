@@ -20,8 +20,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.Socket;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class SendAndGetDataFromContainer {
@@ -41,35 +48,56 @@ public class SendAndGetDataFromContainer {
         // Keep trying to connect to container and give the container some time to load up
         boolean failedToConnect = true;
         IOException error = null;
-        Socket clientSocket = null;
+        HttpURLConnection con = null;
         DataInputStream in = null;
         Thread.sleep(1000);
-        LOGGER.info("Attempting to connect with the container...");
+        System.out.println("Attempting to connect with the container...");
         for (int i = 0; i < 100; i++) {
             try {
-                clientSocket = new Socket("192.168.99.107", 80);
-                WriteDataToContainer.reroute("script1", clientSocket);
-                LOGGER.info("Connected to container port at {}", clientSocket.getRemoteSocketAddress());
-                in = WriteDataToContainer.getInputStream(clientSocket);
-                LOGGER.info("Container ready status: {}", in.readBoolean());
-                WriteDataToContainer.sendData(operation, clientSocket);
+                URL url = new URL("HTTP","192.168.99.107",80,"/script1");
+                con = (HttpURLConnection) url.openConnection();
+                con.setRequestMethod("POST");
+                Map<String, String> parameters = new HashMap<>();
+                parameters.put("param1", "val");
+                con.setDoOutput(true);
+                System.out.println("URL = " + con.getURL());
+                DataOutputStream out = new DataOutputStream(con.getOutputStream());
+                System.out.println("Sending the data: " + getParamsString(parameters));
+                out.writeBytes(getParamsString(parameters));
+                out.flush();
+                out.close();
+                con.disconnect();
+
+                con = (HttpURLConnection) url.openConnection();
+                con.setRequestMethod("GET");
+                con.setDoOutput(true);
+                System.out.println("URL = " + con.getURL());
+                in = new DataInputStream(con.getInputStream());
+                con.disconnect();
+
+//                clientSocket = new Socket("192.168.99.107", 80);
+//                WriteDataToContainer.reroute("script1", clientSocket);
+//                System.out.println("Connected to container port at {}" + clientSocket.getRemoteSocketAddress());
+//                in = WriteDataToContainer.getInputStream(clientSocket);
+                System.out.println("Container ready status: {}" + in.readBoolean());
+//                WriteDataToContainer.sendData(operation, clientSocket);
                 break;
             } catch (final IOException e) {
-                LOGGER.info(e.getMessage());
+                System.out.println(e.getMessage());
                 error = e;
                 TimeUnit.MILLISECONDS.sleep(100);
             }
         }
-        LOGGER.info("clientSocket is: {}", clientSocket);
-        LOGGER.info("In is: {}", in);
+        System.out.println("clientSocket is: {}" + con);
+        System.out.println("In is: {}" + in);
         int incomingDataLength = 0;
-        if (clientSocket != null && in != null) {
+        if (con != null && in != null) {
             int timeout = 0;
             while (timeout < 100) {
                 try {
                     // Get the data from the container
                     incomingDataLength = in.readInt();
-                    LOGGER.info("Length of container...{}", incomingDataLength);
+                    System.out.println("Length of container...{}" + incomingDataLength);
                     failedToConnect = false;
                     break;
                 } catch (final IOException e) {
@@ -81,15 +109,36 @@ public class SendAndGetDataFromContainer {
         }
         StringBuilder dataReceived = new StringBuilder();
         if (failedToConnect) {
-            LOGGER.info("Connection failed, stopping the container...");
-            error.printStackTrace();
+            System.out.println("Connection failed, stopping the container...");
+            if (error != null) {
+                error.printStackTrace();
+            }
         } else {
             for (int i = 0; i < incomingDataLength / 65000; i++) {
                 dataReceived.append(in.readUTF());
             }
             dataReceived.append(in.readUTF());
-            clientSocket.close();
+            con.disconnect();
         }
         return dataReceived;
+
+
+    }
+
+    static String getParamsString(Map<String, String> params)
+            throws UnsupportedEncodingException {
+        StringBuilder result = new StringBuilder();
+
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            result.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
+            result.append("=");
+            result.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
+            result.append("&");
+        }
+
+        String resultString = result.toString();
+        return resultString.length() > 0
+                ? resultString.substring(0, resultString.length() - 1)
+                : resultString;
     }
 }

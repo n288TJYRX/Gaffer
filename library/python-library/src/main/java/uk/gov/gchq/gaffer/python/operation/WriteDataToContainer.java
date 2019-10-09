@@ -43,16 +43,23 @@ final class WriteDataToContainer {
         OutputStream outToContainer = clientSocket.getOutputStream();
         DataOutputStream out = new DataOutputStream(outToContainer);
         boolean firstObject = true;
-        for (final Object current : operation.getInput()) {
-            if (firstObject) {
-                out.writeUTF("[" + new String(JSONSerialiser.serialise(current)));
-                firstObject = false;
-            } else {
-                out.writeUTF(", " + new String(JSONSerialiser.serialise(current)));
-            }
-        }
-        out.writeUTF("]");
-        LOGGER.info("Sending data to docker container from {}", clientSocket.getLocalSocketAddress() + "...");
+        System.out.println("Operation input is: " + operation.getInput());
+
+        String header = "POST /" + "script1" + " HTTP/1.1\r\n" + "Host:pythonserverproject.192.168.99.107.nip.io\r\n\r\n + -d 'somedata'" ;
+        byte[] byteHeader = header.getBytes();
+        out.write(byteHeader,0,byteHeader.length);
+
+//        for (final Object current : operation.getInput()) {
+//            System.out.println("Current is: " + current);
+//            if (firstObject) {
+//                out.writeUTF("[" + new String(JSONSerialiser.serialise(current)));
+//                firstObject = false;
+//            } else {
+//                out.writeUTF(", " + new String(JSONSerialiser.serialise(current)));
+//            }
+//        }
+//        out.writeUTF("]");
+        System.out.println("Sending data to docker container from {}" + clientSocket.getLocalSocketAddress() + "...");
         out.flush();
     }
 
@@ -66,6 +73,7 @@ final class WriteDataToContainer {
         DataOutputStream out = new DataOutputStream(outToContainer);
         byte[] byteHeader = header.getBytes();
         out.write(byteHeader,0,byteHeader.length);
+//        out.writeUTF(header);
         out.flush();
     }
 }
