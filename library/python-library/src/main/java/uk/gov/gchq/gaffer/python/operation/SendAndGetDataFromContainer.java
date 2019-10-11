@@ -20,7 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.TimeUnit;
 
@@ -32,39 +34,52 @@ public class SendAndGetDataFromContainer {
 
     /**
      * @param operation the RunPythonScript operation
-     * @param port the port of the docker client where the data will be passed
+     * @param rootPort the port of the docker client where the data will be passed
      * @return Sets up and closes container
      * @throws InterruptedException should this fail, this will be thrown
      * @throws IOException this will be thrown if non-compliant data is sent
      */
-    public StringBuilder setUpAndCloseContainer(final RunPythonScript operation, final String port) throws InterruptedException, IOException {
+    public StringBuilder setUpAndCloseContainer(final RunPythonScript operation, final String rootPort) throws InterruptedException, IOException {
         // Keep trying to connect to container and give the container some time to load up
         boolean failedToConnect = true;
         IOException error = null;
-        Socket clientSocket = null;
+        Socket clientRootSocket = null;
+        Socket clientScriptSocket = null;
         DataInputStream in = null;
         Thread.sleep(1000);
         System.out.println("Attempting to connect with the container...");
         for (int i = 0; i < 100; i++) {
             try {
-                clientSocket = new Socket("192.168.99.107", 80);
-                WriteDataToContainer.reroute("script1", clientSocket);
-                System.out.println("Connected to container port at {}" + clientSocket.getRemoteSocketAddress());
-                in = WriteDataToContainer.getInputStream(clientSocket);
-                System.out.println("Container Port: {}" + in.readUTF());
-                WriteDataToContainer.reroute("script1", clientSocket);
-//                WriteDataToContainer.sendData(operation, clientSocket);
+                // Connect to the root port
+                clientRootSocket = new Socket("192.168.99.107", Integer.parseInt(rootPort));
+                System.out.println("Connected to root port at {}" + clientRootSocket.getRemoteSocketAddress());
+                // Send the script name
+                OutputStream outToContainer = clientRootSocket.getOutputStream();
+                DataOutputStream out = new DataOutputStream(outToContainer);
+                out.writeUTF("script1");
+                out.flush();
+                // Get the script port number
+                in = WriteDataToContainer.getInputStream(clientRootSocket);
+                System.out.println("Reading script port number...");
+                String scriptPort = in.readUTF();
+                System.out.println("Script port: {}" + scriptPort);
+                // Close the root connection and connect to the script port
+                clientRootSocket.close();
+                clientScriptSocket = new Socket("192.168.99.107", Integer.parseInt(scriptPort));
+                // Send the data to the script
+                WriteDataToContainer.sendData(operation, clientScriptSocket);
                 break;
             } catch (final IOException e) {
-                System.out.println(e.getMessage());
+                System.out.println(e);
+                //System.out.println(e.getMessage());
                 error = e;
                 TimeUnit.MILLISECONDS.sleep(100);
             }
         }
-        System.out.println("clientSocket is: {}" + clientSocket);
+        System.out.println("clientSocket is: {}" + clientScriptSocket);
         System.out.println("In is: {}" + in);
         int incomingDataLength = 0;
-        if (clientSocket != null && in != null) {
+        if (clientScriptSocket != null && in != null) {
             int timeout = 0;
             while (timeout < 100) {
                 try {
@@ -89,7 +104,7 @@ public class SendAndGetDataFromContainer {
                 dataReceived.append(in.readUTF());
             }
             dataReceived.append(in.readUTF());
-            clientSocket.close();
+            clientScriptSocket.close();
         }
         return dataReceived;
     }

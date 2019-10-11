@@ -73,7 +73,7 @@ public class RunPythonScriptHandler {
 
         final String scriptName = operation.getScriptName();
         final Map<String, Object> scriptParameters = operation.getScriptParameters();
-        final String port = "32328";
+        final String port = "30808";
 
         StringBuilder dataReceived = null;
         try {
