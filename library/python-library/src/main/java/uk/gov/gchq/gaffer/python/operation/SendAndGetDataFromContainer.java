@@ -66,6 +66,9 @@ public class SendAndGetDataFromContainer {
                 // Close the root connection and connect to the script port
                 clientRootSocket.close();
                 clientScriptSocket = new Socket("192.168.99.107", Integer.parseInt(scriptPort));
+                System.out.println("Connected to container port at {}" + clientScriptSocket.getRemoteSocketAddress());
+                in = WriteDataToContainer.getInputStream(clientScriptSocket);
+                System.out.println("Container ready status: {}" + in.readBoolean());
                 // Send the data to the script
                 WriteDataToContainer.sendData(operation, clientScriptSocket);
                 break;
