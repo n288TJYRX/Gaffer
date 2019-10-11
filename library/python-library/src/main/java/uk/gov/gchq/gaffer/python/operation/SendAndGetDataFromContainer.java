@@ -44,24 +44,25 @@ public class SendAndGetDataFromContainer {
         Socket clientSocket = null;
         DataInputStream in = null;
         Thread.sleep(1000);
-        LOGGER.info("Attempting to connect with the container...");
+        System.out.println("Attempting to connect with the container...");
         for (int i = 0; i < 100; i++) {
             try {
                 clientSocket = new Socket("192.168.99.107", 80);
                 WriteDataToContainer.reroute("script1", clientSocket);
-                LOGGER.info("Connected to container port at {}", clientSocket.getRemoteSocketAddress());
+                System.out.println("Connected to container port at {}" + clientSocket.getRemoteSocketAddress());
                 in = WriteDataToContainer.getInputStream(clientSocket);
-                LOGGER.info("Container ready status: {}", in.readBoolean());
-                WriteDataToContainer.sendData(operation, clientSocket);
+                System.out.println("Container Port: {}" + in.readUTF());
+                WriteDataToContainer.reroute("script1", clientSocket);
+//                WriteDataToContainer.sendData(operation, clientSocket);
                 break;
             } catch (final IOException e) {
-                LOGGER.info(e.getMessage());
+                System.out.println(e.getMessage());
                 error = e;
                 TimeUnit.MILLISECONDS.sleep(100);
             }
         }
-        LOGGER.info("clientSocket is: {}", clientSocket);
-        LOGGER.info("In is: {}", in);
+        System.out.println("clientSocket is: {}" + clientSocket);
+        System.out.println("In is: {}" + in);
         int incomingDataLength = 0;
         if (clientSocket != null && in != null) {
             int timeout = 0;
@@ -69,7 +70,7 @@ public class SendAndGetDataFromContainer {
                 try {
                     // Get the data from the container
                     incomingDataLength = in.readInt();
-                    LOGGER.info("Length of container...{}", incomingDataLength);
+                    System.out.println("Length of container...{}" + incomingDataLength);
                     failedToConnect = false;
                     break;
                 } catch (final IOException e) {
@@ -81,7 +82,7 @@ public class SendAndGetDataFromContainer {
         }
         StringBuilder dataReceived = new StringBuilder();
         if (failedToConnect) {
-            LOGGER.info("Connection failed, stopping the container...");
+            System.out.println("Connection failed, stopping the container...");
             error.printStackTrace();
         } else {
             for (int i = 0; i < incomingDataLength / 65000; i++) {
