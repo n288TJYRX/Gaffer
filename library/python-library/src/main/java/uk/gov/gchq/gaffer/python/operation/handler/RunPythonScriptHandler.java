@@ -72,7 +72,7 @@ public class RunPythonScriptHandler {
 
         final String repoName = operation.getRepoName();
         final String currentWorkingDirectory = FileSystems.getDefault().getPath("").toAbsolutePath().toString();
-        final String directoryPath = currentWorkingDirectory.concat("/src/main/resources/.PythonBin");
+        final String directoryPath = currentWorkingDirectory.concat("/../../library/python-library/src/main/resources/.PythonBin");
         final Path pathAbsolutePythonRepo = Paths.get(directoryPath, repoName);
         Object output = null;
         final String scriptName = operation.getScriptName();

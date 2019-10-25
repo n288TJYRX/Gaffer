@@ -81,29 +81,29 @@ public class BuildImageFromDockerfile {
 
     public void getFiles(final String pathAbsolutePythonRepo) throws IOException {
 
-        // TODO: Replace with a loop over the files in the resources directory
-        String[] fileNames = new String[4];
-        fileNames[0] = "Dockerfile";
-        fileNames[1] = "DataInputStream.py";
-        fileNames[2] = "entrypoint.py";
-        fileNames[3] = "modules.txt";
-
-        for (int i = 0; i <= 3; i++) {
-            // If alternative file provided
-            if (false) {
-                // Load the file
-            } else {
-                // Use the default file
-                InputStream inputStream = StreamUtil.openStream(getClass(),"/.PythonBin/" + fileNames[i]);
-                LOGGER.info("Dockerfile inputstream is: " + inputStream.toString());
-                String fileData = null;
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-                    fileData = reader.lines().collect(Collectors.joining(System.lineSeparator()));
-                }
-                LOGGER.info("Dockerfile data is: " + fileData);
-                System.out.println("Dockerfile data is: " + fileData);
-                Files.write(Paths.get(pathAbsolutePythonRepo + "/../" + fileNames[i]), fileData.getBytes());
-            }
-        }
+//        // TODO: Replace with a loop over the files in the resources directory
+//        String[] fileNames = new String[4];
+//        fileNames[0] = "Dockerfile";
+//        fileNames[1] = "DataInputStream.py";
+//        fileNames[2] = "entrypoint.py";
+//        fileNames[3] = "modules.txt";
+//
+//        for (int i = 0; i <= 3; i++) {
+//            // If alternative file provided
+//            if (false) {
+//                // Load the file
+//            } else {
+//                // Use the default file
+//                InputStream inputStream = StreamUtil.openStream(getClass(),"/.PythonBin/" + fileNames[i]);
+//                LOGGER.info("Dockerfile inputstream is: " + inputStream.toString());
+//                String fileData = null;
+//                try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+//                    fileData = reader.lines().collect(Collectors.joining(System.lineSeparator()));
+//                }
+//                LOGGER.info("Dockerfile data is: " + fileData);
+//                System.out.println("Dockerfile data is: " + fileData);
+//                Files.write(Paths.get(pathAbsolutePythonRepo + "/../" + fileNames[i]), fileData.getBytes());
+//            }
+//        }
     }
 }
