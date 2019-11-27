@@ -32,19 +32,14 @@ public class DockerImageBuilderTest {
     @Test
     public void shouldBuildImage() {
         // Given
-
         DockerClient docker = null;
-        Git git = null;
         final String currentWorkingDirectory = FileSystems.getDefault().getPath(".").toAbsolutePath().toString();
         final String directoryPath = currentWorkingDirectory.concat(PythonTestConstants.CURRENT_WORKING_DIRECTORY);
         Path pathAbsolutePythonRepo = DockerFileUtils.getPathAbsolutePythonRepo(directoryPath, PythonTestConstants.REPO_NAME);
-        DockerImageBuilder bIFD = new DockerImageBuilder();
+        DockerImageBuilder imageBuilder = new DockerImageBuilder();
 
-        final RunScript<String, String> operation =
-                new RunScript.Builder<String, String>()
-                        .build();
-        final GitScriptProvider pOrC = new GitScriptProvider();
-        pOrC.pullOrClone(git, pathAbsolutePythonRepo.toString(), PythonTestConstants.REPO_URI);
+        final GitScriptProvider scriptProvider = new GitScriptProvider();
+        scriptProvider.getScripts(pathAbsolutePythonRepo.toString(), PythonTestConstants.REPO_URI);
 
         try {
             docker = DefaultDockerClient.fromEnv().build();
@@ -53,17 +48,11 @@ public class DockerImageBuilderTest {
         }
 
         // When
-        String returnedImageId = null;
-        try {
-            bIFD.getFiles(directoryPath, "");
-            returnedImageId = bIFD.buildImage("script1", null, ScriptInputType.DATAFRAME, docker,
+        imageBuilder.getFiles(directoryPath, "");
+        Image returnedImage = imageBuilder.buildImage("script1", null, docker,
                     directoryPath);
-        } catch (DockerException | InterruptedException | IOException e) {
-            e.printStackTrace();
-            Assert.fail();
-        }
 
         // Then
-        Assert.assertNotNull(returnedImageId);
+        Assert.assertNotNull(returnedImage);
     }
 }
