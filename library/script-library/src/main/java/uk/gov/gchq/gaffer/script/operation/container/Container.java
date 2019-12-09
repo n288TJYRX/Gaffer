@@ -16,21 +16,9 @@
 
 package uk.gov.gchq.gaffer.script.operation.container;
 
+import java.io.InputStream;
+
 public interface Container {
-
-    /**
-     * Send data to the container
-     *
-     * @param data             the data being sent
-     */
-    void sendData(Iterable data);
-
-    /**
-     * Retrieve data from the container
-     *
-     * @return the data from the container
-     */
-    StringBuilder receiveData();
 
     /**
      * Get the container id

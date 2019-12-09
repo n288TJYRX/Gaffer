@@ -23,6 +23,7 @@ import org.codehaus.jackson.map.annotate.JsonDeserialize;
 import uk.gov.gchq.gaffer.script.operation.container.Container;
 import uk.gov.gchq.gaffer.script.operation.image.Image;
 
+import java.io.InputStream;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -60,4 +61,18 @@ public interface ImagePlatform {
      * @return the result of the container
      */
     StringBuilder runContainer(Container container, Iterable inputData);
+
+    /**
+     * Send data to the container
+     *
+     * @param data             the data being sent
+     */
+    void sendData(Iterable data);
+
+    /**
+     * Retrieve data from the container
+     *
+     * @return the data from the container
+     */
+    StringBuilder receiveData();
 }
