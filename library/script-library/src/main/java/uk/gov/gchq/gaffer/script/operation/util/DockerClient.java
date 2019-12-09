@@ -16,19 +16,18 @@
 package uk.gov.gchq.gaffer.script.operation.util;
 
 import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 
-public final class DockerClientSingleton {
-    private static volatile DockerClient dockerClient;
+public final class DockerClient {
+    private static volatile com.spotify.docker.client.DockerClient dockerClient;
 
-    private DockerClientSingleton() { }
+    private DockerClient() { }
 
-    public static DockerClient getInstance() {
+    public static com.spotify.docker.client.DockerClient getInstance() {
         // Don't wait for other threads if the instance is available
         if (dockerClient == null) {
             // Synchronize the creation of the docker client
-            synchronized (DockerClientSingleton.class) {
+            synchronized (DockerClient.class) {
                 // Only create a docker client if one already exists
                 if (dockerClient == null) {
                     try {

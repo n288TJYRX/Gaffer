@@ -16,7 +16,6 @@
 package uk.gov.gchq.gaffer.script.operation.platform;
 
 import com.google.common.collect.ImmutableMap;
-import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
@@ -32,7 +31,7 @@ import uk.gov.gchq.gaffer.script.operation.generator.RandomPortGenerator;
 import uk.gov.gchq.gaffer.script.operation.handler.RunScriptHandler;
 import uk.gov.gchq.gaffer.script.operation.image.DockerImage;
 import uk.gov.gchq.gaffer.script.operation.image.Image;
-import uk.gov.gchq.gaffer.script.operation.util.DockerClientSingleton;
+import uk.gov.gchq.gaffer.script.operation.util.DockerClient;
 
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +41,7 @@ import java.util.Objects;
 public class LocalDockerPlatform implements ImagePlatform {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RunScriptHandler.class);
-    private DockerClient docker = null;
+    private com.spotify.docker.client.DockerClient docker = null;
     private String dockerfilePath = "";
     private int port;
 
@@ -64,7 +63,7 @@ public class LocalDockerPlatform implements ImagePlatform {
         // Connect to the Docker client. To ensure only one reference to the Docker client and to avoid
         // memory leaks, synchronize this code amongst multiple threads.
         LOGGER.info("Connecting to the Docker client...");
-        docker = DockerClientSingleton.getInstance();
+        docker = DockerClient.getInstance();
         LOGGER.info("Docker is now: {}", docker);
         final DockerImage dockerImage = (DockerImage) dockerImageBuilder.buildImage(scriptName, scriptParameters, pathToBuildFiles);
 

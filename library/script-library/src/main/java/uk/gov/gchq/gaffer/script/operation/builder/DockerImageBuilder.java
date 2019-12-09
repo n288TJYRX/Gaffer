@@ -17,7 +17,6 @@
 package uk.gov.gchq.gaffer.script.operation.builder;
 
 import com.google.gson.Gson;
-import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import uk.gov.gchq.gaffer.commonutil.StreamUtil;
 import uk.gov.gchq.gaffer.script.operation.image.DockerImage;
 import uk.gov.gchq.gaffer.script.operation.image.Image;
-import uk.gov.gchq.gaffer.script.operation.util.DockerClientSingleton;
+import uk.gov.gchq.gaffer.script.operation.util.DockerClient;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -55,7 +54,7 @@ public class DockerImageBuilder implements ImageBuilder {
     public Image buildImage(final String scriptName, final Map<String, Object> scriptParameters,
                             final String pathToBuildFiles) {
 
-        DockerClient docker = DockerClientSingleton.getInstance();
+        com.spotify.docker.client.DockerClient docker = DockerClient.getInstance();
 
         // Convert the script parameters into a string
         String params = stringifyParameters(scriptParameters);
@@ -67,9 +66,9 @@ public class DockerImageBuilder implements ImageBuilder {
         buildargs.append("\"modulesName\":\"").append(scriptName).append("Modules").append("\"}");
         LOGGER.info(String.valueOf(buildargs));
 
-        DockerClient.BuildParam buildParam = null;
+        com.spotify.docker.client.DockerClient.BuildParam buildParam = null;
         try {
-            buildParam = DockerClient.BuildParam.create("buildargs", URLEncoder.encode(String.valueOf(buildargs), "UTF-8"));
+            buildParam = com.spotify.docker.client.DockerClient.BuildParam.create("buildargs", URLEncoder.encode(String.valueOf(buildargs), "UTF-8"));
         } catch (final UnsupportedEncodingException e) {
             e.printStackTrace();
         }
