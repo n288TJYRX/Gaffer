@@ -21,10 +21,11 @@ import com.spotify.docker.client.exceptions.DockerCertificateException;
 
 public final class DockerClientSingleton {
     private static volatile DockerClient dockerClient;
+    private static int threadCount; // Count of threads using dockerClient
 
     private DockerClientSingleton() { }
 
-    public static DockerClient getInstance() {
+    public static synchronized DockerClient getInstance() {
         // Don't wait for other threads if the instance is available
         if (dockerClient == null) {
             // Synchronize the creation of the docker client
@@ -39,6 +40,14 @@ public final class DockerClientSingleton {
                 }
             }
         }
+        threadCount += 1;
         return dockerClient;
+    }
+
+    public static synchronized void close() {
+        threadCount -= 1;
+        if (threadCount == 0) {
+            dockerClient.close();
+        }
     }
 }
