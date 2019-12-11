@@ -48,6 +48,7 @@ public final class DockerClientSingleton {
         threadCount -= 1;
         if (threadCount == 0) {
             dockerClient.close();
+            dockerClient = null;
         }
     }
 }
