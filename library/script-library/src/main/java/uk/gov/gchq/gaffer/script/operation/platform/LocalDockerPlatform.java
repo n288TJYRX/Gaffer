@@ -119,6 +119,8 @@ public class LocalDockerPlatform implements ImagePlatform {
                 containerId = creation.id();
             } catch (final DockerException | InterruptedException e) {
                 LOGGER.error(e.getMessage());
+                RandomPortGenerator.getInstance().releasePort(port);
+                DockerClientSingleton.close();
             }
         }
         return new LocalDockerContainer(containerId, port);

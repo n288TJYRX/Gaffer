@@ -19,11 +19,13 @@ import uk.gov.gchq.gaffer.operation.OperationException;
 
 import uk.gov.gchq.gaffer.script.operation.RunScript;
 import uk.gov.gchq.gaffer.script.operation.container.Container;
+import uk.gov.gchq.gaffer.script.operation.generator.RandomPortGenerator;
 import uk.gov.gchq.gaffer.script.operation.image.Image;
 import uk.gov.gchq.gaffer.script.operation.platform.ImagePlatform;
 import uk.gov.gchq.gaffer.script.operation.platform.LocalDockerPlatform;
 import uk.gov.gchq.gaffer.script.operation.provider.GitScriptProvider;
 import uk.gov.gchq.gaffer.script.operation.provider.ScriptProvider;
+import uk.gov.gchq.gaffer.script.operation.util.DockerClientSingleton;
 import uk.gov.gchq.gaffer.store.Context;
 import uk.gov.gchq.gaffer.store.Store;
 import uk.gov.gchq.gaffer.store.operation.handler.OperationHandler;
@@ -64,6 +66,8 @@ public class RunScriptHandler implements OperationHandler<RunScript> {
             // Run the container and return the result
             return imagePlatform.runContainer(container, operation.getInput());
         } catch (final Exception e) {
+            RandomPortGenerator.getInstance().releasePort(port);
+            DockerClientSingleton.close();
             throw new OperationException(e);
         }
     }

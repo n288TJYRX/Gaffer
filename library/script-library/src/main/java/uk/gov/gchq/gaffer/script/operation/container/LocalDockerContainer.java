@@ -20,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.gov.gchq.gaffer.jsonserialisation.JSONSerialiser;
+import uk.gov.gchq.gaffer.script.operation.generator.RandomPortGenerator;
+import uk.gov.gchq.gaffer.script.operation.util.DockerClientSingleton;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -97,6 +99,8 @@ public class LocalDockerContainer implements Container {
         // Only print an error if it still fails after many tries
         if (error != null) {
             LOGGER.error(error.getMessage());
+            RandomPortGenerator.getInstance().releasePort(port);
+            DockerClientSingleton.close();
         }
     }
 
@@ -141,6 +145,7 @@ public class LocalDockerContainer implements Container {
                 dataRecvd = checkIfDataReceivedBeginsWithError(dataReceived);
             } catch (final IOException e) {
                 LOGGER.error(e.getMessage());
+                DockerClientSingleton.close();
             }
         }
         try {

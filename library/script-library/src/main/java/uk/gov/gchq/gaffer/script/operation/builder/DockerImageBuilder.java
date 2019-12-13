@@ -83,6 +83,7 @@ public class DockerImageBuilder implements ImageBuilder {
                     }, buildParam));
         } catch (final DockerException | InterruptedException | IOException e) {
             LOGGER.error(e.getMessage());
+            DockerClientSingleton.close();
             throw new Exception(e);
         }
     }
@@ -109,6 +110,7 @@ public class DockerImageBuilder implements ImageBuilder {
             retVal = URLEncoder.encode(String.valueOf(buildargs), "UTF-8");
         } catch (final UnsupportedEncodingException e) {
             LOGGER.error(e.getMessage());
+            DockerClientSingleton.close();
         }
 
         return retVal;
