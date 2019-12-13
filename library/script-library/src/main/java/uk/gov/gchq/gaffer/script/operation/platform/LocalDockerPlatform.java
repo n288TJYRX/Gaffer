@@ -99,7 +99,7 @@ public class LocalDockerPlatform implements ImagePlatform {
      * @return the docker container
      */
     @Override
-    public Container createContainer(final Image image) throws Exception {
+    public Container createContainer(final Image image) throws DockerException, InterruptedException {
 
         String containerId = "";
         Exception error = null;
@@ -120,6 +120,8 @@ public class LocalDockerPlatform implements ImagePlatform {
                             .build();
                     final ContainerCreation creation = docker.createContainer(containerConfig);
                     containerId = creation.id();
+                    error = null;
+                    break;
                 } catch (final DockerException | InterruptedException e) {
                     error = e;
                 }
@@ -130,7 +132,12 @@ public class LocalDockerPlatform implements ImagePlatform {
         if (error != null) {
             LOGGER.error(error.getMessage());
             LOGGER.error("Failed to create the container");
-            throw error;
+            if (error instanceof DockerException) {
+                throw new DockerException(error.getMessage());
+            }
+            if (error instanceof InterruptedException) {
+                throw new InterruptedException(error.getMessage());
+            }
         }
 
         return new LocalDockerContainer(containerId, port);

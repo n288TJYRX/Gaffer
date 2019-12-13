@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import uk.gov.gchq.gaffer.script.operation.DockerFileUtils;
 import uk.gov.gchq.gaffer.script.operation.ScriptTestConstants;
 import uk.gov.gchq.gaffer.script.operation.builder.DockerImageBuilder;
-import uk.gov.gchq.gaffer.script.operation.container.Container;
 import uk.gov.gchq.gaffer.script.operation.container.LocalDockerContainer;
 import uk.gov.gchq.gaffer.script.operation.image.Image;
 import uk.gov.gchq.gaffer.script.operation.provider.GitScriptProvider;
@@ -73,7 +72,12 @@ public class LocalDockerPlatformTest {
         }
 
         // When
-        LocalDockerContainer container = (LocalDockerContainer) platform.createContainer(image);
+        LocalDockerContainer container = null;
+        try {
+            container = (LocalDockerContainer) platform.createContainer(image);
+        } catch (DockerException | InterruptedException e) {
+            Assert.fail();
+        }
 
         try {
             if (docker != null) {
@@ -102,7 +106,12 @@ public class LocalDockerPlatformTest {
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
         }
-        Container container = platform.createContainer(image);
+        LocalDockerContainer container = null;
+        try {
+            container = (LocalDockerContainer) platform.createContainer(image);
+        } catch (DockerException | InterruptedException e) {
+            Assert.fail();
+        }
         List data = new ArrayList();
         data.add("testData");
 
