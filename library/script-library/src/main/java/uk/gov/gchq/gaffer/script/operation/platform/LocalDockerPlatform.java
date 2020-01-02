@@ -71,8 +71,7 @@ public class LocalDockerPlatform implements ImagePlatform {
      * @throws DockerCertificateException       if image build fails
      */
     @Override
-    public DockerImage buildImage(final String scriptName, final Map<String, Object> scriptParameters, final String pathToBuildFiles) throws IOException, DockerCertificateException, DockerException, InterruptedException
-{
+    public DockerImage buildImage(final String scriptName, final Map<String, Object> scriptParameters, final String pathToBuildFiles) throws IOException, DockerCertificateException, DockerException, InterruptedException {
         final DockerImageBuilder dockerImageBuilder = new DockerImageBuilder();
 
         // Get the user defined dockerfile or use the default
@@ -86,6 +85,20 @@ public class LocalDockerPlatform implements ImagePlatform {
         final DockerImage dockerImage = (DockerImage) dockerImageBuilder.buildImage(scriptName, scriptParameters, pathToBuildFiles);
 
         // Remove the old images
+        cleanImages();
+
+        return dockerImage;
+    }
+
+    private void cleanImages() {
+
+        try {
+            docker = DockerClientSingleton.getInstance();
+        } catch (final DockerCertificateException e) {
+            LOGGER.info(e.toString());
+            LOGGER.info("Failed to create a connection to the docker client");
+        }
+
         List<com.spotify.docker.client.messages.Image> images = null;
         try {
             images = docker.listImages();
@@ -106,8 +119,6 @@ public class LocalDockerPlatform implements ImagePlatform {
             LOGGER.info(e.toString());
             LOGGER.info("Could not remove the old images, images still in use.");
         }
-
-        return dockerImage;
     }
 
     /**
@@ -180,7 +191,7 @@ public class LocalDockerPlatform implements ImagePlatform {
                     Thread.sleep(100);
                 }
                 docker.startContainer(container.getContainerId());
-                while(!containerActive) {
+                while (!containerActive) {
                     Thread.sleep(100);
                 }
                 error = null;
@@ -210,7 +221,7 @@ public class LocalDockerPlatform implements ImagePlatform {
         HttpServer server = null;
         try {
             server = HttpServer.create(new InetSocketAddress(port), 0);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             e.printStackTrace();
         }
         HttpContext context = server.createContext("/");
@@ -219,9 +230,9 @@ public class LocalDockerPlatform implements ImagePlatform {
         listenerActive = true;
     }
 
-    private void containerHTTPHandler(HttpExchange exchange) throws IOException {
+    private void containerHTTPHandler(final HttpExchange exchange) throws IOException {
         String response = "Connection Received\n";
-        exchange.sendResponseHeaders(200, response.getBytes().length);//response code and length
+        exchange.sendResponseHeaders(200, response.getBytes().length); //response code and length
         OutputStream os = exchange.getResponseBody();
         os.write(response.getBytes());
         os.close();
