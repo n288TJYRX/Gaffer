@@ -8,16 +8,20 @@ import com.netflix.conductor.client.worker.Worker;
 
 import uk.gov.gchq.gaffer.commonutil.iterable.CloseableIterable;
 import uk.gov.gchq.gaffer.data.element.Element;
+import uk.gov.gchq.gaffer.operation.Operation;
+import uk.gov.gchq.gaffer.operation.OperationException;
 import uk.gov.gchq.gaffer.store.Context;
 import uk.gov.gchq.gaffer.store.Store;
+import uk.gov.gchq.gaffer.store.operation.handler.OperationHandler;
 import uk.gov.gchq.gaffer.workflow.RunWorkflow;
 import uk.gov.gchq.gaffer.workflow.workers.RunScriptWorker;
 
 import static uk.gov.gchq.gaffer.workflow.util.ConductorEndpoint.*;
 
-public class RunWorkflowHandler {
+public class RunWorkflowHandler implements OperationHandler {
 
-    public CloseableIterable<? extends Element> doOperation(final RunWorkflow operation, final Context context, final Store store) {
+    @Override
+    public Object doOperation(final RunWorkflow operation, final Context context, final Store store) throws OperationException {
 
         // Convert the input to JSON
         ObjectMapper mapper = new ObjectMapper();

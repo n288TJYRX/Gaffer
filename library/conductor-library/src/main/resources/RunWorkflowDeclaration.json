@@ -1,6 +1,10 @@
 {
-  "operation": "uk.gov.gchq.gaffer.workflow.RunWorkflow",
-  "handler": {
-    "class": "uk.gov.gchq.gaffer.workflow.RunWorkflowHandler"
-  }
+  "operations": [
+    {
+      "operation": "uk.gov.gchq.gaffer.workflow.RunWorkflow",
+      "handler": {
+        "class": "uk.gov.gchq.gaffer.workflow.handler.RunWorkflowHandler"
+      }
+    }
+  ]
 }
