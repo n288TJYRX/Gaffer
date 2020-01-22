@@ -36,27 +36,21 @@ public class RunScriptWorker implements Worker {
     @Override
     public TaskResult execute(Task task) {
 
-        // Check if this is a RunScript task
-        if ("runScriptTask".compareTo(task.getReferenceTaskName()) == 0 ) {
+        System.out.println("Executing {}." + taskDefName);
 
-            System.out.println("Executing {}." + taskDefName);
+        TaskResult result = new TaskResult(task);
 
-            TaskResult result = new TaskResult(task);
-
-            // Do the calculations
-            try {
-                processTask(task, result);
-                result.setStatus(TaskResult.Status.COMPLETED);
-            } catch (Exception e) {
-                e.printStackTrace();
-                result.setStatus(TaskResult.Status.FAILED);
-            }
-
-            return result;
+        // Do the calculations
+        try {
+            processTask(task, result);
+            result.setStatus(TaskResult.Status.COMPLETED);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Failed to execute task: " + task.getTaskDefName());
+            result.setStatus(TaskResult.Status.FAILED);
         }
 
-        // What to do if this is not the correct task?
-        return null;
+        return result;
     }
 
     /**
@@ -65,7 +59,7 @@ public class RunScriptWorker implements Worker {
      * @param task the task called from Conductor
      * @param result the result to return to Conductor
      */
-    private void processTask(Task task, TaskResult result) {
+    private void processTask(Task task, TaskResult result) throws Exception {
 
         System.out.println("Processing task: " + task.getTaskDefName());
 
@@ -100,15 +94,10 @@ public class RunScriptWorker implements Worker {
 
         // Use the handler to run the operation
         Object output = null;
-        try {
-            RunScriptHandler handler = new RunScriptHandler();
-            handler.setRepoName("test");
-            handler.setRepoURI("https://github.com/g609bmsma/test");
-            output = handler.run("script1",scriptInput,scriptParameters);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Failed to execute task: " + task.getTaskDefName());
-        }
+        RunScriptHandler handler = new RunScriptHandler();
+        handler.setRepoName("test");
+        handler.setRepoURI("https://github.com/g609bmsma/test");
+        output = handler.run("script1", scriptInput, scriptParameters);
         System.out.println("Output: " + output);
 
         // Set the output of this task

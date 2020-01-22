@@ -17,15 +17,13 @@ import static workflow.util.ConductorEndpoint.*;
 
 public class RunWorkflowHandler {
 
-
-
     public CloseableIterable<? extends Element> doOperation(final RunWorkflow operation, final Context context, final Store store) {
 
         // Convert the input to JSON
         ObjectMapper mapper = new ObjectMapper();
         String workflowInputJSON = null;
         try {
-            workflowInputJSON = mapper.writeValueAsString(operation.getInput());
+            workflowInputJSON = mapper.writeValueAsString(operation.getWorkflowInput());
             System.out.println("workflowInputJSON: " + workflowInputJSON);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
