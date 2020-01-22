@@ -1,4 +1,4 @@
-package workflow.handler;
+package uk.gov.gchq.gaffer.workflow.handler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,10 +10,10 @@ import uk.gov.gchq.gaffer.commonutil.iterable.CloseableIterable;
 import uk.gov.gchq.gaffer.data.element.Element;
 import uk.gov.gchq.gaffer.store.Context;
 import uk.gov.gchq.gaffer.store.Store;
-import workflow.RunWorkflow;
-import workflow.workers.RunScriptWorker;
+import uk.gov.gchq.gaffer.workflow.RunWorkflow;
+import uk.gov.gchq.gaffer.workflow.workers.RunScriptWorker;
 
-import static workflow.util.ConductorEndpoint.*;
+import static uk.gov.gchq.gaffer.workflow.util.ConductorEndpoint.*;
 
 public class RunWorkflowHandler {
 
@@ -30,7 +30,7 @@ public class RunWorkflowHandler {
         }
 
         // Start the workflow
-        executePost( BASE_URI + WORKFLOW_START_ENDPOINT + "/" + operation.getWorkflowName(), workflowInputJSON);
+        executePost(BASE_URI + WORKFLOW_START_ENDPOINT + "/" + operation.getWorkflowName(), workflowInputJSON);
 
         // Start the worker
         TaskClient taskClient = new TaskClient();

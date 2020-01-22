@@ -1,12 +1,6 @@
-package workflow;
+package uk.gov.gchq.gaffer.workflow;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.conductor.client.http.TaskClient;
-import com.netflix.conductor.client.task.WorkflowTaskCoordinator;
-import com.netflix.conductor.client.worker.Worker;
-import workflow.handler.RunWorkflowHandler;
-import workflow.workers.RunScriptWorker;
+import uk.gov.gchq.gaffer.workflow.handler.RunWorkflowHandler;
 
 import java.util.ArrayList;
 import java.util.HashMap;

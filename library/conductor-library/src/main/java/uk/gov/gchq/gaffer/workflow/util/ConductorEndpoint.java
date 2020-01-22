@@ -1,4 +1,4 @@
-package workflow.util;
+package uk.gov.gchq.gaffer.workflow.util;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;

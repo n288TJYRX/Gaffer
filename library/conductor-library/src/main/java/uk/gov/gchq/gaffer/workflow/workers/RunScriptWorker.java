@@ -1,4 +1,4 @@
-package workflow.workers;
+package uk.gov.gchq.gaffer.workflow.workers;
 
 import com.netflix.conductor.client.worker.Worker;
 import com.netflix.conductor.common.metadata.tasks.Task;

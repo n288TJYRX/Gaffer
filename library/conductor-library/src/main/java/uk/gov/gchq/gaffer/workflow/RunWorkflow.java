@@ -1,4 +1,4 @@
-package workflow;
+package uk.gov.gchq.gaffer.workflow;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.exception.CloneFailedException;

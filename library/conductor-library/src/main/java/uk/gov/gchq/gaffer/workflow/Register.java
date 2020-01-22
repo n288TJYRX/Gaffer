@@ -1,10 +1,10 @@
-package workflow;
+package uk.gov.gchq.gaffer.workflow;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import static workflow.util.ConductorEndpoint.*;
+import static uk.gov.gchq.gaffer.workflow.util.ConductorEndpoint.*;
 
 public class Register {
 
