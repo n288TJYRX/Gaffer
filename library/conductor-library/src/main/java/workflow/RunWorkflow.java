@@ -17,7 +17,7 @@ public class RunWorkflow<I_ITEM, O> implements
 
     private Iterable<? extends I_ITEM> input;
     private String workflowName;
-    private Map<String, Object> workflowParameters;
+    private Map<String, Object> workflowInput;
     private Map<String, String> options;
 
     public Iterable<? extends I_ITEM> getInput() {
@@ -36,12 +36,12 @@ public class RunWorkflow<I_ITEM, O> implements
         return workflowName;
     }
 
-    public Map<String, Object> getWorkflowParameters() {
-        return workflowParameters;
+    public Map<String, Object> getWorkflowInput() {
+        return workflowInput;
     }
 
-    public void setWorkflowParameters(final Map<String, Object> workflowParameters) {
-        this.workflowParameters = workflowParameters;
+    public void setWorkflowInput(final Map<String, Object> workflowInput) {
+        this.workflowInput = workflowInput;
     }
 
     @Override
@@ -53,7 +53,7 @@ public class RunWorkflow<I_ITEM, O> implements
     public Operation shallowClone() throws CloneFailedException {
         return new RunWorkflow.Builder<>()
                 .workflowName(workflowName)
-                .workflowParameters(workflowParameters)
+                .workflowInput(workflowInput)
                 .build();
     }
 
@@ -82,8 +82,8 @@ public class RunWorkflow<I_ITEM, O> implements
             return _self();
         }
 
-        public Builder<I_ITEM, O> workflowParameters(final Map<String, Object> workflowParameters) {
-            _getOp().setWorkflowParameters(workflowParameters);
+        public Builder<I_ITEM, O> workflowInput(final Map<String, Object> workflowInput) {
+            _getOp().setWorkflowInput(workflowInput);
             return _self();
         }
     }

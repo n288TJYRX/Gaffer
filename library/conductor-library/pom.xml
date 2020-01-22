@@ -17,6 +17,27 @@
             <artifactId>operation</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.netflix.conductor</groupId>
+            <artifactId>conductor-common</artifactId>
+            <version>1.11.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.netflix.conductor</groupId>
+            <artifactId>conductor-client</artifactId>
+            <version>1.11.4</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+                    <artifactId>jsr311-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>uk.gov.gchq.gaffer</groupId>
+            <artifactId>script-library</artifactId>
+            <version>1.10.6-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
 </project>
