@@ -18,10 +18,10 @@ import uk.gov.gchq.gaffer.workflow.workers.RunScriptWorker;
 
 import static uk.gov.gchq.gaffer.workflow.util.ConductorEndpoint.*;
 
-public class RunWorkflowHandler implements OperationHandler {
+public class RunWorkflowHandler implements OperationHandler<RunWorkflow> {
 
     @Override
-    public Object doOperation(final RunWorkflow operation, final Context context, final Store store) throws OperationException {
+    public Object doOperation(final RunWorkflow operation, final Context context, final Store store) {
 
         // Convert the input to JSON
         ObjectMapper mapper = new ObjectMapper();
