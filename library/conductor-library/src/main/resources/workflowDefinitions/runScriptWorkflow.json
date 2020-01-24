@@ -9,6 +9,7 @@
 			"taskReferenceName": "runScriptTask",
 			"description": "A simple demo task that just prints the parameter in the logs",
 			"inputParameters": {
+				"scriptName": "${workflow.input.scriptName}",
 				"scriptInput": "${workflow.input.scriptInput}",
 				"scriptParameters": "${workflow.input.scriptParameters}"
 			},

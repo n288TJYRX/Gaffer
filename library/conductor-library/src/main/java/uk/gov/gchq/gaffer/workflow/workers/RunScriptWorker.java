@@ -70,6 +70,9 @@ public class RunScriptWorker implements Worker {
         Map<String, Object> inputMap = task.getInputData();
         System.out.println("inputMap: " + inputMap.toString());
 
+        String scriptName = (String) inputMap.get("scriptName");
+        System.out.println("scriptName: " + scriptName);
+
         ArrayList<String> scriptInput = (ArrayList<String>) inputMap.get("scriptInput");
         System.out.println("scriptInput: " + scriptInput);
 
@@ -84,7 +87,7 @@ public class RunScriptWorker implements Worker {
         RunScriptHandler handler = new RunScriptHandler();
         handler.setRepoName("test");
         handler.setRepoURI("https://github.com/g609bmsma/test");
-        output = handler.run("script1", scriptInput, scriptParameters);
+        output = handler.run(scriptName, scriptInput, scriptParameters);
         System.out.println("Output: " + output);
 
         // Set the output of this task

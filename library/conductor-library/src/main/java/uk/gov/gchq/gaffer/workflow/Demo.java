@@ -13,12 +13,15 @@ public class Demo {
 
         // Create the workflow input
         final String workflowName = "runScriptWorkflow";
+        final String scriptName = "script1";
         final ArrayList<String> scriptInput = new ArrayList<>();
         scriptInput.add("1");
         final Map<String, Object> scriptParameters = new HashMap<String, Object>() { {
             put("a", "b");
         } };
+
         Map<String, Object> workflowInput = new HashMap<>();
+        workflowInput.put("scriptName", scriptName);
         workflowInput.put("scriptInput", scriptInput);
         workflowInput.put("scriptParameters", scriptParameters);
 

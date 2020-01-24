@@ -63,6 +63,7 @@ public class RunWorkflowHandler implements OperationHandler<RunWorkflow> {
         while (!workflowStatus.equals("COMPLETED") && !workflowStatus.equals("FAILED") && !workflowStatus.equals("TIMED OUT")) {
             // If the workflow hasn't completed after a long while stop checking
             if (System.currentTimeMillis() > timeStart + WORKFLOW_TIMEOUT) {
+                coordinator.shutdown();
                 throw new OperationException("Workflow timed out");
             }
 
