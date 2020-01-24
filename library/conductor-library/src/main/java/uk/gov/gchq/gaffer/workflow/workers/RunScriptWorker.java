@@ -8,9 +8,12 @@ import org.slf4j.LoggerFactory;
 
 import uk.gov.gchq.gaffer.script.operation.handler.RunScriptHandler;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
+import static uk.gov.gchq.gaffer.workflow.Register.loadJSON;
 
 public class RunScriptWorker implements Worker {
 
@@ -69,25 +72,9 @@ public class RunScriptWorker implements Worker {
 
         ArrayList<String> scriptInput = (ArrayList<String>) inputMap.get("scriptInput");
         System.out.println("scriptInput: " + scriptInput);
-//		ArrayList<String> input = null;
-//		try {
-//			input = JSONSerialiser.deserialise(scriptInput, ArrayList.class);
-//		} catch (SerialisationException e) {
-//			e.printStackTrace();
-//			throw new SerialisationException("Failed to deserialise the script input");
-//		}
-//		System.out.println("input: " + input.toString());
 
         HashMap<String, Object> scriptParameters = (HashMap<String, Object>) inputMap.get("scriptParameters");
         System.out.println("ScriptParameters: " + scriptParameters);
-//		HashMap<String, Object> parameters = null;
-//		try {
-//			parameters = JSONSerialiser.deserialise(scriptParameters, HashMap.class);
-//		} catch (SerialisationException e) {
-//			e.printStackTrace();
-//			throw new SerialisationException("Failed to deserialise the script parameters");
-//		}
-//		System.out.println("parameters: " + parameters.toString());
 
         // Run the task
         System.out.println("Running task: " + task.getTaskDefName());
@@ -101,7 +88,6 @@ public class RunScriptWorker implements Worker {
         System.out.println("Output: " + output);
 
         // Set the output of this task
-        String confStarter = task.getInputData().get("start_id") + task.getTaskDefName();
-        result.getOutputData().put("conf_starter", confStarter);
+        result.getOutputData().put("taskOutput", output);
     }
 }

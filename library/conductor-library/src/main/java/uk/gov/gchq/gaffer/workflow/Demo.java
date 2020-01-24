@@ -1,5 +1,6 @@
 package uk.gov.gchq.gaffer.workflow;
 
+import uk.gov.gchq.gaffer.operation.OperationException;
 import uk.gov.gchq.gaffer.workflow.handler.RunWorkflowHandler;
 
 import java.util.ArrayList;
@@ -27,6 +28,10 @@ public class Demo {
                 .workflowInput(workflowInput)
                 .build();
         RunWorkflowHandler workflowHandler = new RunWorkflowHandler();
-        workflowHandler.doOperation(runWorkflowOperation, null, null);
+        try {
+            workflowHandler.doOperation(runWorkflowOperation, null, null);
+        } catch (OperationException e) {
+            e.printStackTrace();
+        }
     }
 }

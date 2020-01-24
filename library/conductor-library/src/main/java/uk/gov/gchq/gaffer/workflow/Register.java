@@ -12,12 +12,12 @@ public class Register {
 
         // Register task definitions
         String task = loadJSON(new File("").getAbsolutePath() + "/library/conductor-library/src/main/resources/taskDefinitions/runScriptTask.json");
-        executePost(BASE_URI + TASK_DEF_ENDPOINT, task);
+        http("POST",BASE_URI + TASK_DEF_ENDPOINT, task);
 
         // Register workflow definition
         // You may get an error saying the workflow already exists if you've already run this code once
         String workflow = loadJSON(new File("").getAbsolutePath() + "/library/conductor-library/src/main/resources/workflowDefinitions/runScriptWorkflow.json");
-        executePost(BASE_URI + WORKFLOW_DEF_ENDPOINT, workflow);
+        http("POST",BASE_URI + WORKFLOW_DEF_ENDPOINT, workflow);
 
     }
 

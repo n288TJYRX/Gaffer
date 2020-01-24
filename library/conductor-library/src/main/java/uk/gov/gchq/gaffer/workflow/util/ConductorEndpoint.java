@@ -13,30 +13,30 @@ public class ConductorEndpoint {
     public static String TASK_DEF_ENDPOINT = "metadata/taskdefs";
     public static String WORKFLOW_DEF_ENDPOINT = "metadata/workflow";
     public static String WORKFLOW_START_ENDPOINT = "workflow";
+//    private final HttpClient httpClient = HttpClient.newBuilder()
+//            .version(HttpClient.Version.HTTP_2)
+//            .build();
 
-    public static String executePost(String targetURL, String urlParameters) {
+    public static String http(String method, String targetURL, String urlParameters) {
         HttpURLConnection connection = null;
 
         try {
             //Create connection
             URL url = new URL(targetURL);
             connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type",
-                    "application/json");
-
-            connection.setRequestProperty("Content-Length",
-                    Integer.toString(urlParameters.getBytes().length));
+            connection.setRequestMethod(method);
+            connection.setRequestProperty("Content-Type", "application/json");
             connection.setRequestProperty("Content-Language", "en-US");
-
             connection.setUseCaches(false);
             connection.setDoOutput(true);
 
-            //Send request
-            DataOutputStream wr = new DataOutputStream(
-                    connection.getOutputStream());
-            wr.writeBytes(urlParameters);
-            wr.close();
+            // Send parameters
+            if (urlParameters != null) {
+                connection.setRequestProperty("Content-Length", Integer.toString(urlParameters.getBytes().length));
+                DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+                wr.writeBytes(urlParameters);
+                wr.close();
+            }
 
             //Get Response
             InputStream is = connection.getInputStream();
