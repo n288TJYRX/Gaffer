@@ -11,6 +11,16 @@
 
     <artifactId>conductor-library</artifactId>
 
+    <repositories>
+        <repository>
+            <id>JCenter</id>
+            <url>https://jcenter.bintray.com/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>uk.gov.gchq.gaffer</groupId>
@@ -25,12 +35,12 @@
         <dependency>
             <groupId>com.netflix.conductor</groupId>
             <artifactId>conductor-common</artifactId>
-            <version>1.11.4</version>
+            <version>2.23.0</version>
         </dependency>
         <dependency>
             <groupId>com.netflix.conductor</groupId>
             <artifactId>conductor-client</artifactId>
-            <version>1.11.4</version>
+            <version>2.23.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.ws.rs</groupId>
@@ -49,14 +59,14 @@
             <version>1.7.25</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.9.8</version>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>23.0</version>
+            <version>28.2-jre</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.vmg.protogen</groupId>
+            <artifactId>protogen-annotations</artifactId>
+            <version>1.0.0</version>
         </dependency>
     </dependencies>
 
