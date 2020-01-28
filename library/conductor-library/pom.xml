@@ -49,11 +49,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>uk.gov.gchq.gaffer</groupId>
-            <artifactId>script-library</artifactId>
-            <version>1.10.6-SNAPSHOT</version>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.7.25</version>
