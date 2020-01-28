@@ -2,10 +2,6 @@ package uk.gov.gchq.gaffer.workflow.handler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.conductor.client.automator.TaskRunnerConfigurer;
-import com.netflix.conductor.client.http.TaskClient;
-import com.netflix.conductor.client.task.WorkflowTaskCoordinator;
-import com.netflix.conductor.client.worker.Worker;
 
 import uk.gov.gchq.gaffer.exception.SerialisationException;
 import uk.gov.gchq.gaffer.jsonserialisation.JSONSerialiser;
@@ -14,9 +10,7 @@ import uk.gov.gchq.gaffer.store.Context;
 import uk.gov.gchq.gaffer.store.Store;
 import uk.gov.gchq.gaffer.store.operation.handler.OperationHandler;
 import uk.gov.gchq.gaffer.workflow.RunWorkflow;
-import uk.gov.gchq.gaffer.workflow.workers.RunScriptWorker;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import static uk.gov.gchq.gaffer.workflow.util.ConductorEndpoint.*;
@@ -42,26 +36,6 @@ public class RunWorkflowHandler implements OperationHandler<RunWorkflow> {
         String workflowId = http("POST",BASE_URI + WORKFLOW_START_ENDPOINT + "/" + operation.getWorkflowName(), workflowInputJSON);
         System.out.println("Workflow Id: " + workflowId);
 
-        // Create the task client
-        TaskClient taskClient = new TaskClient();
-        taskClient.setRootURI(BASE_URI);
-
-        // Setup the workers
-        int threadCount = 2;
-        Worker runScriptWorker = new RunScriptWorker("runScriptTask");
-        ArrayList<Worker> workers = new ArrayList<>();
-        workers.add(runScriptWorker);
-
-        // Setup the task runner
-        TaskRunnerConfigurer.Builder builder = new TaskRunnerConfigurer.Builder(taskClient, workers);
-        TaskRunnerConfigurer taskRunner = builder
-                .withThreadCount(threadCount)
-                .build();
-
-        // Start polling for tasks
-        System.out.println("Initiating Worker Manager...");
-        taskRunner.init();
-
         // Get the output of the workflow using the workflow Id
         HashMap workflowOutput = null;
         HashMap<String, Object> responseMap = new HashMap<>();
@@ -70,7 +44,6 @@ public class RunWorkflowHandler implements OperationHandler<RunWorkflow> {
         while (!workflowStatus.equals("COMPLETED") && !workflowStatus.equals("FAILED") && !workflowStatus.equals("TIMED OUT")) {
             // If the workflow hasn't completed after a long while stop checking
             if (System.currentTimeMillis() > timeStart + WORKFLOW_TIMEOUT) {
-                taskRunner.shutdown();
                 throw new OperationException("Workflow timed out");
             }
 
@@ -91,9 +64,6 @@ public class RunWorkflowHandler implements OperationHandler<RunWorkflow> {
                 e.printStackTrace();
             }
         }
-
-        // Shut down the task runner
-        taskRunner.shutdown();
 
         // Get the workflow output
         workflowOutput = (HashMap) responseMap.get("output");
