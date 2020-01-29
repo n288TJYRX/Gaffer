@@ -1,5 +1,7 @@
 package uk.gov.gchq.gaffer.workflow;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import uk.gov.gchq.gaffer.operation.OperationException;
 import uk.gov.gchq.gaffer.workflow.handler.RunWorkflowHandler;
 
@@ -12,8 +14,7 @@ public class Demo {
     public static void main(String args[]) {
 
         // Create the workflow input
-        final String workflowName = "runScriptWorkflow";
-        final String scriptName = "script1";
+        final String workflowName = "runSequentialParametersScriptWorkflow";
         final ArrayList<String> scriptInput = new ArrayList<>();
         scriptInput.add("1");
         final Map<String, Object> scriptParameters = new HashMap<String, Object>() { {
@@ -21,7 +22,6 @@ public class Demo {
         } };
 
         Map<String, Object> workflowInput = new HashMap<>();
-        workflowInput.put("scriptName", scriptName);
         workflowInput.put("scriptInput", scriptInput);
         workflowInput.put("scriptParameters", scriptParameters);
 

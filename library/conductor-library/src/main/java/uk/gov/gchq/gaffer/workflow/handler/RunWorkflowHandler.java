@@ -68,9 +68,9 @@ public class RunWorkflowHandler implements OperationHandler<RunWorkflow> {
         // Get the workflow output
         workflowOutput = (HashMap) responseMap.get("output");
         System.out.println("WorkflowOutput is: " + workflowOutput);
-        Object result = workflowOutput.get("taskOutput");
+        Object result = workflowOutput.get("results");
         System.out.println("Workflow result is: " + result);
 
-        return result;
+        return workflowOutput;
     }
 }
