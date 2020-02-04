@@ -14,6 +14,7 @@ import uk.gov.gchq.gaffer.workflow.RunWorkflow;
 import java.util.HashMap;
 
 import static uk.gov.gchq.gaffer.workflow.util.ConductorEndpoint.*;
+import static uk.gov.gchq.gaffer.workflow.util.HTTP.http;
 
 public class RunWorkflowHandler implements OperationHandler<RunWorkflow> {
     int WORKFLOW_CHECK_INTERVAL = 1000;
